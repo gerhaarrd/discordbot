@@ -12,123 +12,156 @@ GUILD_ID = os.getenv("GUILD_ID")
 
 intents = discord.Intents.default()
 intents.members = True
+intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
+# ---------------- VIEW ----------------
 
-class BotãoRedes(ui.View):
-    def __init__(self):
-        super().__init__()
-        self.add_item(ui.Button(label="TikTok", url="https://www.tiktok.com/@gg_soulll?_r=1&_t=ZS-93g7EKTUQ53"))
+class Components(discord.ui.LayoutView):
 
+    container1 = discord.ui.Container(
+        discord.ui.Section(
+            discord.ui.TextDisplay(
+                content="### ˚₊‧꒰ 𝐛𝐨𝐚𝐬-𝐯𝐢𝐧𝐝𝐚𝐬 𝐚 𝐒𝐨𝐮𝐥! 🍄🌿\n\n"
+                        "⋆˙ Comeu um cogumelo e agora está meio perdido(a)? "
+                        "Calma, você caiu na comunidade certa! Boas-vindas a **Soul™** "
+                        "o melhor servidor temático único para criar novas amizades "
+                        "que nunca para de crescer! 🎋"
+            ),
+            accessory=discord.ui.Thumbnail(
+                media="https://cdn.discordapp.com/attachments/1439299374302630011/1469146027922817271/10_Sem_Titulo_20260130142941.png"
+            ),
+        ),
+
+        discord.ui.Separator(visible=True, spacing=discord.SeparatorSpacing.large),
+
+        discord.ui.TextDisplay(
+            content="\n🔮 Torne-se Booster e tenha acesso a uma ampla customização única que só você como booster pode ter! ₊˚⊹\n"
+                    "── .✦ Cores em degrade. 🌈\n"
+                    "── .✦ Mídia em bate-papo 🎨\n"
+                    "── .✦ 5x XP. 🎀\n"
+                    "── .✦ Emblema de Booster. 🎏\n"
+                    "**E muito mais...**\n\n"
+                    "Acesse nosso **TikTok** no botão abaixo! 🎯 ˖⋆࿐໋"
+        ),
+
+        discord.ui.MediaGallery(
+            discord.MediaGalleryItem(
+                media="https://cdn.discordapp.com/attachments/1445955005659222078/1466782521109909690/Picsart_26-01-30_00-11-45-266.jpg"
+            )
+        ),
+
+        discord.ui.ActionRow(
+            discord.ui.Button(
+                label="TikTok",
+                url="https://www.tiktok.com/@gg_soulll?_r=1&_t=ZS-93g7EKTUQ53"
+            )
+        ),
+
+        accent_colour=discord.Colour(16112295),
+    )
+
+
+# ---------------- EVENTOS ----------------
 
 @bot.event
 async def on_ready():
-    print(f"Bot conectado como {bot.user} (ID {bot.user.id})")
-    try:
-        local_cmds = list(bot.tree.get_commands())
-        print(f"Comandos locais registrados: {len(local_cmds)}")
-        for c in local_cmds:
-            try:
-                print(f" - {c.name} (guild_only={getattr(c, 'guild_only', False)})")
-            except Exception:
-                print(f" - {c}")
+    print(f"Bot conectado como {bot.user}")
 
+    try:
         if GUILD_ID:
             guild_obj = discord.Object(id=int(GUILD_ID))
             synced = await bot.tree.sync(guild=guild_obj)
-            print(f"Sincronizados {len(synced)} comandos no servidor de teste {GUILD_ID}")
+            print(f"Sincronizados {len(synced)} comandos no servidor {GUILD_ID}")
         else:
             synced = await bot.tree.sync()
-            print(f"Sincronizados {len(synced)} comandos (globais)")
+            print(f"Sincronizados {len(synced)} comandos globais")
     except Exception as e:
         print("Erro ao sincronizar comandos:", e)
 
 
-
 @bot.event
 async def on_member_join(member: discord.Member):
+
     try:
-        print(f"on_member_join: member={member} guild_id={getattr(member.guild, 'id', None)} configured_GUILD_ID={GUILD_ID}")
-        # Only send the welcome DM for the configured guild (if GUILD_ID set)
         if GUILD_ID and member.guild.id != int(GUILD_ID):
-            print(f"Skipping DM: joined guild {member.guild.id} != configured {GUILD_ID}")
             return
-        description = """⋆˙ Comeu um cogumelo e agora está meio perdido(a)? Calma, você caiu na comunidade certa! Boas-vindas a Soul™ o melhor servidor temático único para criar novas amizades que nunca para de crescer! 🎋
 
-    🔮 Torne-se Booster e tenha acesso a uma ampla customização única que só você como booster pode ter! ₊˚⊹ 
-    ── .✦ Cores em degrade. 🌈
-    ── .✦ Mídia em bate-papo 🎨
-    ── .✦ 5x XP. 🎀
-    ── .✦ Emblema de Booster. 🎏
-    E muito mais...
+        view = Components()
 
-    Acesse nosso TikTok no botão abaixo!  🎯 ˖⋆࿐໋"""
-        embed = discord.Embed(title="˚₊‧꒰ 𝐛𝐨𝐚𝐬-𝐯𝐢𝐧𝐝𝐚𝐬 𝐚 𝐒𝐨𝐮𝐥! 🍄🌿", description=description, color=15191462)
-        embed.set_footer(text="𝗦𝗼𝘂𝗹™ — seus sonhos estão guardados aqui!  ⋆˚࿔")
-        embed.set_image(url="https://cdn.discordapp.com/attachments/1445955005659222078/1466782521109909690/Picsart_26-01-30_00-11-45-266.jpg?ex=6985e82c&is=698496ac&hm=f8d2c81578dca88bc5c881c20d5c9a4410e6b96b637f5acfab02024728e791a4&")
-        embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/1439299374302630011/1466847919079428400/10_Sem_Titulo_20260130142941.png?ex=69862514&is=6984d394&hm=c1f51f50275007a904a12b1358280f4dab0842b33755a60171a5d143de537d1a&")
-        await member.send(embed=embed, view=BotãoRedes())
-        print(f"Embed de boas-vindas enviado para {member} ({member.id})")
+        await member.send(view=view)
+
+        print(f"Mensagem de boas-vindas enviada para {member}")
+
     except Exception as e:
-        # Usuário pode ter DMs desabilitadas; logamos e seguimos
-        print(f"Não foi possível enviar DM para {member} ({member.id}):", e)
+        print(f"Erro ao enviar DM para {member}:", e)
 
 
-@bot.tree.command(name="ping", description="Responde com pong")
+@bot.command()
+async def send_components(ctx):
+    await ctx.send(view=Components())
+
+@bot.event
+async def on_message(message: discord.Message):
+    if message.author.bot:
+        return
+
+    CHANNEL_ID = 1446156978702389492 #facereveal
+    CHANNEL_ID2 = 1465827743978750246 #skinreveal
+
+    if getattr(message.channel, "id", None) not in (CHANNEL_ID, CHANNEL_ID2):
+        await bot.process_commands(message)
+        return
+
+    has_media = False
+
+    for att in message.attachments:
+        ct = att.content_type
+        if ct:
+            if ct.startswith("image") or ct.startswith("video"):
+                has_media = True
+                break
+        fn = att.filename.lower()
+        if fn.endswith((".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".mp4", ".mov", ".mkv", ".webm", ".avi", ".flv")):
+            has_media = True
+            break
+
+    if not has_media:
+        for emb in message.embeds:
+            if getattr(emb, "image", None) and getattr(emb.image, "url", None):
+                has_media = True
+                break
+            if getattr(emb, "video", None) and getattr(emb.video, "url", None):
+                has_media = True
+                break
+
+    if not has_media:
+        try:
+            await message.delete()
+        except Exception as e:
+            print(f"Erro ao deletar mensagem em {message.channel}:", e)
+        return
+
+    await bot.process_commands(message)
+
+
+# ---------------- SLASH COMMANDS ----------------
+
+@bot.tree.command(name="ping")
 async def ping(interaction: discord.Interaction):
     start = time.perf_counter()
     await interaction.response.send_message("Pinging...")
     elapsed = (time.perf_counter() - start) * 1000
-    try:
-        msg = await interaction.original_response()
-        await msg.edit(content=f"{elapsed:.0f}ms (RTT) — ws {bot.latency*1000:.0f}ms")
-    except Exception:
-        # Fallback: send followup if editing failed
-        await interaction.followup.send(f"{elapsed:.0f}ms (RTT) — ws {bot.latency*1000:.0f}ms")
+
+    msg = await interaction.original_response()
+    await msg.edit(content=f"{elapsed:.0f}ms — ws {bot.latency*1000:.0f}ms")
 
 
-@bot.tree.command(name="echo", description="Repete sua mensagem")
-@app_commands.describe(message="Mensagem a repetir")
-async def echo(interaction: discord.Interaction, message: str):
-    await interaction.response.send_message(message)
-
-
-@bot.tree.command(name="math", description="Soma dois números")
-@app_commands.describe(a="Primeiro número", b="Segundo número")
-async def math_add(interaction: discord.Interaction, a: int, b: int):
-    await interaction.response.send_message(f"{a} + {b} = {a + b}")
-
-
-@bot.command(name="testdm")
-async def testdm(ctx: commands.Context):
-    """Envia o embed de boas-vindas por DM para quem executar o comando (teste)."""
-    try:
-        description = """⋆˙ Comeu um cogumelo e agora está meio perdido(a)? Calma, você caiu na comunidade certa! Boas-vindas a Soul™ o melhor servidor temático único para criar novas amizades que nunca para de crescer! 🎋
-
-    🔮 Torne-se Booster e tenha acesso a uma ampla customização única que só você como booster pode ter! ₊˚⊹ 
-    ── .✦ Cores em degrade. 🌈
-    ── .✦ Mídia em bate-papo 🎨
-    ── .✦ 5x XP. 🎀
-    ── .✦ Emblema de Booster. 🎏
-    E muito mais...
-
-    Acesse nosso TikTok no botão abaixo!  🎯 ˖⋆࿐໋"""
-        embed = discord.Embed(title="˚₊‧꒰ 𝐛𝐨𝐚𝐬-𝐯𝐢𝐧𝐝𝐚𝐬 𝐚 𝐒𝐨𝐮𝐥! 🍄🌿", description=description, color=15191462)
-        embed.set_footer(text="𝗦𝗼𝘂𝗹™ — seus sonhos estão guardados aqui!  ⋆˚࿔")
-        embed.set_image(url="https://cdn.discordapp.com/attachments/1445955005659222078/1466782521109909690/Picsart_26-01-30_00-11-45-266.jpg?ex=6985e82c&is=698496ac&hm=f8d2c81578dca88bc5c881c20d5c9a4410e6b96b637f5acfab02024728e791a4&")
-        embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/1439299374302630011/1466847919079428400/10_Sem_Titulo_20260130142941.png?ex=69862514&is=6984d394&hm=c1f51f50275007a904a12b1358280f4dab0842b33755a60171a5d143de537d1a&")
-        await ctx.author.send(embed=embed, view=BotãoRedes())
-        await ctx.send("DM enviada com sucesso.")
-        print(f"Test DM enviado para {ctx.author} ({ctx.author.id})")
-    except Exception as e:
-        # Log detalhado no console e avisa no canal
-        print(f"Não foi possível enviar DM de teste para {ctx.author} ({ctx.author.id}):", e)
-        await ctx.send("Não consegui enviar DM — provavelmente DMs estão fechadas ou o bot foi bloqueado.")
-
+# ---------------- RUN ----------------
 
 if __name__ == "__main__":
     if not TOKEN:
-        print("TOKEN não definido. Crie um arquivo .env com TOKEN=seu_token")
+        print("TOKEN não definido no .env")
     else:
         bot.run(TOKEN)
