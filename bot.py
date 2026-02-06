@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 from pathlib import Path
 import os
 import time
+import logging
+from logging.handlers import RotatingFileHandler
 
 load_dotenv(Path(__file__).parent / ".env")
 TOKEN = os.getenv("TOKEN")
@@ -78,13 +80,13 @@ async def on_ready():
             synced = await bot.tree.sync()
             print(f"Sincronizados {len(synced)} comandos globais")
     except Exception as e:
-        print("Erro ao sincronizar comandos:", e)
+        print(f"Erro ao sincronizar comandos: {e}")
 
 
 @bot.event
 async def on_member_join(member: discord.Member):
 
-    try:
+    #try:
         if GUILD_ID and member.guild.id != int(GUILD_ID):
             return
 
@@ -92,10 +94,10 @@ async def on_member_join(member: discord.Member):
 
         await member.send(view=view)
 
-        print(f"Mensagem de boas-vindas enviada para {member}")
+        #print(f"Mensagem de boas-vindas enviada para {member}")
 
-    except Exception as e:
-        print(f"Erro ao enviar DM para {member}:", e)
+    #except Exception as e:
+        #print(f"Erro ao enviar DM para {member}: {e}")
 
 
 @bot.command()
@@ -110,7 +112,10 @@ async def on_message(message: discord.Message):
     CHANNEL_ID = 1446156978702389492 #facereveal
     CHANNEL_ID2 = 1465827743978750246 #skinreveal
 
+    #print(f"Recebida mensagem {getattr(message, 'id', None)} de {message.author} no canal {getattr(message.channel,'id',None)}")
+
     if getattr(message.channel, "id", None) not in (CHANNEL_ID, CHANNEL_ID2):
+        #print("Canal não é alvo — processando comandos normalmente")
         await bot.process_commands(message)
         return
 
@@ -137,12 +142,14 @@ async def on_message(message: discord.Message):
                 break
 
     if not has_media:
-        try:
+        #try:
             await message.delete()
-        except Exception as e:
-            print(f"Erro ao deletar mensagem em {message.channel}:", e)
-        return
+            #print(f"Deletada mensagem {getattr(message,'id',None)} de {message.author} no canal {message.channel} — sem mídia")
+        #except Exception as e:
+            #print(f"Erro ao deletar mensagem {getattr(message,'id',None)} em {message.channel}: {e}")
+        #return
 
+    #print(f"Mensagem {getattr(message,'id',None)} preservada (tem mídia) no canal {message.channel}")
     await bot.process_commands(message)
 
 
