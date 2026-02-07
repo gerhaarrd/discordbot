@@ -1,7 +1,7 @@
 import time
 import discord
 from discord.ext import commands
-from views import Components, ColorsView
+from views import Components, ColorsView, NormalColorsView
 
 async def register(bot):
     @bot.command()
@@ -21,3 +21,7 @@ async def register(bot):
     @bot.command()
     async def colors(ctx):
         await ctx.send(view=ColorsView())
+
+    @bot.command()
+    async def normal_colors(ctx):
+        await ctx.send(view=NormalColorsView())

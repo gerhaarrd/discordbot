@@ -20,9 +20,6 @@ async def load_modules():
     await message_event.register(bot)
     await misc_commands.register(bot)
 
-
-
-
 @bot.event
 async def setup_hook():
     await load_modules()
