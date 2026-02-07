@@ -3,6 +3,7 @@ import discord
 class ColorsSelect(discord.ui.Select):
     def __init__(self):
         options = [
+            discord.SelectOption(label="Remover cor 🚫", value="none"),
             discord.SelectOption(label="˚⋆🍪｡𝐝𝐨𝐮𝐫𝐚𝐝𝐨", value="1439110891659329536"),
             discord.SelectOption(label="˚⋆💜｡𝐯𝐢𝐨𝐥𝐞𝐭𝐚", value="1439111576090050760"),
             discord.SelectOption(label="˚⋆🌪｡𝐩𝐫𝐞𝐭𝐨", value="1439113714002297014"),
@@ -14,23 +15,12 @@ class ColorsSelect(discord.ui.Select):
         ]
 
         super().__init__(
-            placeholder="Escolha sua cor...",
+            placeholder="ᯓ★ SELECIONE A COR ꒰🎨‧˚˚. ᵎᵎ ",
             options=options,
             custom_id="colors_select"
         )
 
     async def callback(self, interaction: discord.Interaction):
-
-        role_id = int(self.values[0])
-        role = interaction.guild.get_role(role_id)
-
-        if role is None:
-            await interaction.response.send_message(
-                "Cargo não encontrado.",
-                ephemeral=True
-            )
-            return
-
         member = interaction.user
 
         color_roles = [
@@ -49,6 +39,25 @@ class ColorsSelect(discord.ui.Select):
             for r in color_roles
             if interaction.guild.get_role(r) in member.roles
         ]
+
+        selected_value = self.values[0]
+        if selected_value == "none":
+            await member.remove_roles(*roles_to_remove)
+            await interaction.response.send_message(
+                "Sua cor foi removida!",
+                ephemeral=True
+            )
+            return
+
+        role_id = int(selected_value)
+        role = interaction.guild.get_role(role_id)
+
+        if role is None:
+            await interaction.response.send_message(
+                "Cargo não encontrado.",
+                ephemeral=True
+            )
+            return
 
         await member.remove_roles(*roles_to_remove)
         await member.add_roles(role)
