@@ -7,7 +7,6 @@ import events.ready as ready_event
 import events.member_join as join_event
 import events.message_filter as message_event
 import commands.misc as misc_commands
-import commands.security as security_commands
 
 intents = discord.Intents.default()
 intents.members = True
@@ -20,7 +19,6 @@ async def load_modules():
     await join_event.register(bot)
     await message_event.register(bot)
     await misc_commands.register(bot)
-    await security_commands.register(bot)
 
 @bot.event
 async def setup_hook():
