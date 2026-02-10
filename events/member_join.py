@@ -1,5 +1,3 @@
-
-
 from config import GUILD_ID
 from views import Components
 

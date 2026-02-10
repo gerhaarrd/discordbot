@@ -12,6 +12,7 @@ async def register(bot):
         try:
             if GUILD_ID:
                 guild_obj = discord.Object(id=int(GUILD_ID))
+                bot.tree.copy_global_to(guild=guild_obj)
                 synced = await bot.tree.sync(guild=guild_obj)
                 print(f"Sincronizados {len(synced)} comandos no servidor {GUILD_ID}")
             else:
