@@ -1,12 +1,14 @@
 import discord
 from config import GUILD_ID
-from views import ColorsView, NormalColorsView
+from views import ColorsView, NormalColorsView, Components, RarePingView
 
 async def register(bot):
     @bot.event
     async def on_ready():
         bot.add_view(ColorsView())
         bot.add_view(NormalColorsView())
+        bot.add_view(Components())
+        bot.add_view(RarePingView())
         print(f"Bot conectado como {bot.user}")
 
         try:

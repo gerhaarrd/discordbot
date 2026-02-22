@@ -1,12 +1,12 @@
 import time
 import discord
 from discord.ext import commands
-from views import Components, ColorsView, NormalColorsView
+from views import WelcomeComponents, ColorsView, NormalColorsView, Components, RarePingView
 
 async def register(bot):
     @bot.command()
     async def send_components(ctx):
-        await ctx.send(view=Components())
+        await ctx.send(view=WelcomeComponents())
 
     @bot.tree.command(name="ping")
     async def ping(interaction: discord.Interaction):
@@ -25,3 +25,47 @@ async def register(bot):
     @bot.command()
     async def normal_colors(ctx):
         await ctx.send(view=NormalColorsView())
+
+    @bot.command()
+    async def rareping(ctx):
+        await ctx.send(view=Components())
+        await ctx.send(view=RarePingView())
+
+    @bot.command()
+    async def test(ctx):
+        await ctx.send("Test command working!")
+
+    @bot.tree.command(name="testbump", description="Simula um bump done para teste")
+    async def testbump(interaction: discord.Interaction):
+        # Verificar se está no canal correto
+        if interaction.channel.id != 1389979510975500349:
+            await interaction.response.send_message("❌ Use este comando no canal de bumps!", ephemeral=True)
+            return
+
+        embed = discord.Embed(
+            title="DISBOARD",
+            description="Bump done! Check it out!",
+            color=discord.Color.green()
+        )
+
+        embed.set_author(
+            name="DISBOARD",
+            icon_url="https://cdn.discordapp.com/icons/302050872383242240/a_???.gif"
+        )
+
+        await interaction.response.send_message(embed=embed)
+        
+        class MockMessage:
+            def __init__(self, channel, author_id, embeds):
+                self.channel = channel
+                self.author = MockAuthor(author_id)
+                self.embeds = embeds
+        
+        class MockAuthor:
+            def __init__(self, author_id):
+                self.id = author_id
+        
+        mock_message = MockMessage(interaction.channel, 302050872383242240, [embed])
+        
+        from events.message_handler import handle_bump_detection
+        await handle_bump_detection(interaction.client, mock_message)
