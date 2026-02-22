@@ -30,7 +30,7 @@ async def load_modules():
     await mush_commands.register(bot)
     print("mush_commands loaded")
     print("bump_event loaded")
-    #await esporos_event.register(bot)
+    await esporos_event.register(bot)
     print("All modules loaded!")
     print([command.name for command in bot.commands])
 
