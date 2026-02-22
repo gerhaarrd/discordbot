@@ -21,38 +21,25 @@ def load_usage():
         try:
             with open(USAGE_FILE, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-                usage = {}
-                relations = {}
-                
-                for key, value in data.items():
-                    if key.startswith("_rel_"):
-                        receiver_id = int(key[5:])
-                        relations[receiver_id] = int(value)
-                    else:
-                        usage[int(key)] = value
-                
-                return usage, relations
+                # Converter para o formato {user_id: true/false}
+                usage = {int(k): v for k, v in data.items()}
+                return usage, {}
         except Exception as e:
             print(f"Erro ao carregar arquivo de uso: {e}")
             return {}, {}
     return {}, {}
 
 def save_usage(usage_data, relations_data):
-    """Salva os dados de uso e relações no arquivo JSON."""
+    """Salva os dados de uso no arquivo JSON."""
     try:
-        combined_data = {}
-        
-        for k, v in usage_data.items():
-            combined_data[str(k)] = v
-        
-        for receiver_id, giver_id in relations_data.items():
-            combined_data[f"_rel_{receiver_id}"] = giver_id
-        
+        # Converter para o formato {user_id: true/false}
+        optimized_data = {str(k): v for k, v in usage_data.items()}
         with open(USAGE_FILE, 'w', encoding='utf-8') as f:
-            json.dump(combined_data, f, separators=(',', ':'))
+            json.dump(optimized_data, f, separators=(',', ':'))
     except Exception as e:
         print(f"Erro ao salvar arquivo de uso: {e}")
 
+# Carregar dados de uso ao iniciar
 mushadd_usage, mushadd_relations = load_usage()
 
 async def register(bot):
@@ -71,55 +58,41 @@ async def register(bot):
             await interaction.response.send_message("❌ Você não pode adicionar cargo a si mesmo!", ephemeral=True)
             return
         
-        user_id = interaction.user.id
-        if user_id in mushadd_usage:
-            receiver_id = None
-            for rid, gid in mushadd_relations.items():
-                if gid == user_id:
-                    receiver_id = rid
-                    break
-            
-            if receiver_id:
-                receiver_member = interaction.guild.get_member(receiver_id)
-                if receiver_member:
-                    await interaction.response.send_message(f"❌ {receiver_member.mention} já recebeu o cargo {cargo.mention} de você! Não pode usar novamente.", ephemeral=True)
-                else:
-                    await interaction.response.send_message("❌ Você já usou este comando! Não pode usar novamente.", ephemeral=True)
-            else:
-                await interaction.response.send_message("❌ Você já usou este comando! Não pode usar novamente.", ephemeral=True)
-            return
+        # Verificar se a pessoa já tem algum cargo de cogumelo
+        for role_id in MUSHROOM_ROLES:
+            role = interaction.guild.get_role(role_id)
+            if role and role in usuario.roles:
+                await interaction.response.send_message(f"❌ {usuario.mention} já tem um sticker! Cada pessoa só pode ter um.", ephemeral=True)
+                return
         
+        # Verificar se o cargo está na lista permitida
         if cargo.id not in MUSHROOM_ROLES:
-            await interaction.response.send_message("❌ Este cargo não está na lista de cargos de cogumelos!", ephemeral=True)
+            await interaction.response.send_message("❌ Este cargo não está na lista de stickers!", ephemeral=True)
             return
         
-        if cargo in usuario.roles:
-            await interaction.response.send_message(f"❌ {usuario.mention} já tem o cargo {cargo.mention}!", ephemeral=True)
-            return
-        
+        # Adicionar o cargo ao usuário
         try:
-            print(f"Tentando adicionar cargo {cargo.id} ({cargo.name}) para usuário {usuario.id} ({usuario.name})")
+            print(f"Tentando adicionar sticker {cargo.id} ({cargo.name}) para usuário {usuario.id} ({usuario.name})")
             await usuario.add_roles(cargo)
-            print(f"Cargo adicionado com sucesso")
+            print(f"Sticker adicionado com sucesso")
             
-            mushadd_usage[user_id] = True
-            
-            mushadd_relations[usuario.id] = user_id
+            # Marcar quem recebeu o cargo
+            mushadd_usage[usuario.id] = True  # Quem tem o cargo agora
             
             save_usage(mushadd_usage, mushadd_relations)
             
-            await interaction.response.send_message(f"✅ Cargo {cargo.mention} adicionado para {usuario.mention}!", ephemeral=True)
+            await interaction.response.send_message(f"✅ Sticker {cargo.mention} adicionado para {usuario.mention}!", ephemeral=True)
                 
         except discord.Forbidden:
-            print("Erro: Sem permissão para adicionar cargo")
-            await interaction.response.send_message("❌ Não tenho permissão para adicionar este cargo!", ephemeral=True)
+            print("Erro: Sem permissão para adicionar sticker")
+            await interaction.response.send_message("❌ Não tenho permissão para adicionar este sticker!", ephemeral=True)
         except Exception as e:
-            print(f"Erro ao adicionar cargo: {e}")
-            await interaction.response.send_message(f"❌ Erro ao adicionar cargo: {e}", ephemeral=True)
+            print(f"Erro ao adicionar sticker: {e}")
+            await interaction.response.send_message(f"❌ Erro ao adicionar sticker: {e}", ephemeral=True)
 
-    @bot.tree.command(name="mushremove", description="Remove todos os cargos de cogumelos de um usuário")
+    @bot.tree.command(name="mushremove", description="Remove todos os stickers de um usuário")
     @app_commands.describe(
-        usuario="Usuário que terá os cargos removidos"
+        usuario="Usuário que terá os stickers removidos"
     )
     async def mushremove(interaction: discord.Interaction, usuario: discord.Member):
         admin_role = interaction.guild.get_role(ADMIN_ROLE_ID)
@@ -134,24 +107,22 @@ async def register(bot):
                 roles_to_remove.append(role)
         
         if not roles_to_remove:
-            await interaction.response.send_message(f"❌ {usuario.mention} não tem nenhum cargo de cogumelos para remover!", ephemeral=True)
+            await interaction.response.send_message(f"❌ {usuario.mention} não tem nenhum sticker para remover!", ephemeral=True)
             return
         
         try:
             await usuario.remove_roles(*roles_to_remove)
+            print(f"Removidos {len(roles_to_remove)} stickers de {usuario.name}")
             
-            if usuario.id in mushadd_relations:
-                giver_id = mushadd_relations[usuario.id]
-                if giver_id in mushadd_usage:
-                    del mushadd_usage[giver_id]
-            
-            if usuario.id in mushadd_relations:
-                del mushadd_relations[usuario.id]
+            # Remover marcação de quem tem cargo
+            if usuario.id in mushadd_usage:
+                del mushadd_usage[usuario.id]
+                print(f"Marcação removida para {usuario.id}")
             
             save_usage(mushadd_usage, mushadd_relations)
             
-            await interaction.response.send_message(f"✅ Cargos de cogumelos removidos de {usuario.mention}! Quem deu o cargo pode usar novamente.", ephemeral=True)
+            await interaction.response.send_message(f"✅ Todos os stickers removidos de {usuario.mention}!", ephemeral=True)
             
         except Exception as e:
-            print(f"Erro ao remover cargos: {e}")
-            await interaction.response.send_message(f"❌ Erro ao remover cargos: {e}", ephemeral=True)
+            print(f"Erro ao remover stickers: {e}")
+            await interaction.response.send_message(f"❌ Erro ao remover stickers: {e}", ephemeral=True)
