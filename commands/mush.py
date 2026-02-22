@@ -21,7 +21,6 @@ def load_usage():
         try:
             with open(USAGE_FILE, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-                # Converter para o formato {user_id: true/false}
                 usage = {int(k): v for k, v in data.items()}
                 return usage, {}
         except Exception as e:
@@ -32,14 +31,12 @@ def load_usage():
 def save_usage(usage_data, relations_data):
     """Salva os dados de uso no arquivo JSON."""
     try:
-        # Converter para o formato {user_id: true/false}
         optimized_data = {str(k): v for k, v in usage_data.items()}
         with open(USAGE_FILE, 'w', encoding='utf-8') as f:
             json.dump(optimized_data, f, separators=(',', ':'))
     except Exception as e:
         print(f"Erro ao salvar arquivo de uso: {e}")
 
-# Carregar dados de uso ao iniciar
 mushadd_usage, mushadd_relations = load_usage()
 
 async def register(bot):
@@ -58,26 +55,20 @@ async def register(bot):
             await interaction.response.send_message("❌ Você não pode adicionar cargo a si mesmo!", ephemeral=True)
             return
         
-        # Verificar se a pessoa já tem algum cargo de cogumelo
         for role_id in MUSHROOM_ROLES:
             role = interaction.guild.get_role(role_id)
             if role and role in usuario.roles:
                 await interaction.response.send_message(f"❌ {usuario.mention} já tem um sticker! Cada pessoa só pode ter um.", ephemeral=True)
                 return
         
-        # Verificar se o cargo está na lista permitida
         if cargo.id not in MUSHROOM_ROLES:
             await interaction.response.send_message("❌ Este cargo não está na lista de stickers!", ephemeral=True)
             return
         
-        # Adicionar o cargo ao usuário
         try:
-            print(f"Tentando adicionar sticker {cargo.id} ({cargo.name}) para usuário {usuario.id} ({usuario.name})")
             await usuario.add_roles(cargo)
-            print(f"Sticker adicionado com sucesso")
             
-            # Marcar quem recebeu o cargo
-            mushadd_usage[usuario.id] = True  # Quem tem o cargo agora
+            mushadd_usage[usuario.id] = True 
             
             save_usage(mushadd_usage, mushadd_relations)
             
@@ -112,12 +103,9 @@ async def register(bot):
         
         try:
             await usuario.remove_roles(*roles_to_remove)
-            print(f"Removidos {len(roles_to_remove)} stickers de {usuario.name}")
             
-            # Remover marcação de quem tem cargo
             if usuario.id in mushadd_usage:
                 del mushadd_usage[usuario.id]
-                print(f"Marcação removida para {usuario.id}")
             
             save_usage(mushadd_usage, mushadd_relations)
             
