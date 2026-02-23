@@ -14,7 +14,7 @@ async def register(bot):
 async def bump_reminder(channel):
     try:
         print("Starting bump reminder task...")
-        await asyncio.sleep(2)
+        await asyncio.sleep(2 * 60 * 60)
 
         guild = channel.guild
         role = guild.get_role(bump_role)

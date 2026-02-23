@@ -8,7 +8,6 @@ import events.member_join as join_event
 import events.message_handler as message_event
 import commands.misc as misc_commands
 import commands.mush as mush_commands
-# import events.bump as bump_event  # Não precisa mais - só tem bump_reminder
 import events.esporos as esporos_event
 
 intents = discord.Intents.default()
@@ -30,7 +29,7 @@ async def load_modules():
     await mush_commands.register(bot)
     print("mush_commands loaded")
     print("bump_event loaded")
-    #await esporos_event.register(bot)
+    await esporos_event.register(bot)
     print("All modules loaded!")
     print([command.name for command in bot.commands])
 
