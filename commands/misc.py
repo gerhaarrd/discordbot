@@ -1,7 +1,7 @@
 import time
 import discord
 from discord.ext import commands
-from views import WelcomeComponents, ColorsView, NormalColorsView, Components, RarePingView
+from views import WelcomeComponents, ColorsView, NormalColorsView, Components, RarePingView, BumpComponents
 
 async def register(bot):
     @bot.command()
@@ -30,6 +30,10 @@ async def register(bot):
     async def rareping(ctx):
         await ctx.send(view=Components())
         await ctx.send(view=RarePingView())
+
+    @bot.command()
+    async def bumpview(ctx):
+        await ctx.send(view=BumpComponents())
 
     @bot.command()
     async def test(ctx):
