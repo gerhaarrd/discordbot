@@ -6,6 +6,7 @@ from config import TOKEN
 import events.ready as ready_event
 import events.member_join as join_event
 import events.message_handler as message_event
+import events.bump as bump_event
 import commands.misc as misc_commands
 import commands.mush as mush_commands
 import events.esporos as esporos_event

@@ -17,6 +17,8 @@ async def handle_bump_detection(bot, message):
         
     print("Bump done detected")
     
+    await message.channel.send(f"✅ Bump! Vou te lembrar em 2 horas para dar o próximo bump! ⏰ {message.author.mention}")
+    
     from events.bump import bump_reminder
     import asyncio
     
@@ -52,10 +54,6 @@ async def handle_message_filter(message):
 async def register(bot):
     @bot.event
     async def on_message(message):
-        # Não ignorar mensagens de bots - precisamos detectar DISBOARD
-        # if message.author.bot:
-        #     return
-
         await bot.process_commands(message)
 
         await handle_bump_detection(bot, message)
