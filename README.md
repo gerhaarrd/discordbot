@@ -24,26 +24,13 @@ Projeto focado em componentes de interface (`LayoutView`, containers, seções e
 
 ---
 
-## 📂 Estrutura do projeto
-
-```
-discordbot/
-│
-├── bot.py              # Arquivo principal do bot
-├── requirements.txt    # Dependências do projeto
-├── .env.example        # Exemplo de variáveis de ambiente
-└── README.md
-```
-
----
-
 ## ⚙️ Instalação
 
 ### 1️⃣ Clonar o repositório
 
 ```bash
-git clone https://github.com/gerhaarrd/discordbot.git
-cd discordbot
+git clone https://github.com/gerhaarrd/kinoribot.git
+cd kinoribot
 ```
 
 ---
