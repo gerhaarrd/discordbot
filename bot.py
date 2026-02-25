@@ -10,6 +10,7 @@ import events.message_handler as message_event
 import events.bump as bump_event
 import commands.misc as misc_commands
 import commands.mush as mush_commands
+import commands.reputation as reputation_commands
 import events.esporos as esporos_event
 
 intents = discord.Intents.default()
@@ -30,6 +31,8 @@ async def load_modules():
     print("misc_commands loaded")
     await mush_commands.register(bot)
     print("mush_commands loaded")
+    await reputation_commands.register(bot)
+    print("reputation_commands loaded")
     print("bump_event loaded")
     #await esporos_event.register(bot)
     print("All modules loaded!")

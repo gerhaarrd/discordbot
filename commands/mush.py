@@ -4,7 +4,7 @@ import os
 from discord.ext import commands
 from discord import app_commands
 
-ADMIN_ROLE_ID = 1459225578304569532
+ADMIN_ROLE_ID = [1404088289610301441, 1459225578304569532]
 MUSHROOM_ROLES = [
     1475153859776221194, 
     1475154995778420849, 
@@ -46,8 +46,8 @@ async def register(bot):
         cargo="Cargo específico para adicionar"
     )
     async def mushadd(interaction: discord.Interaction, usuario: discord.Member, cargo: discord.Role):
-        admin_role = interaction.guild.get_role(ADMIN_ROLE_ID)
-        if admin_role not in interaction.user.roles:
+        admin_role = any(interaction.guild.get_role(role_id) in interaction.user.roles for role_id in ADMIN_ROLE_ID)
+        if not admin_role:
             await interaction.response.send_message("❌ Você não tem permissão para usar este comando!", ephemeral=True)
             return
         
@@ -86,8 +86,8 @@ async def register(bot):
         usuario="Usuário que terá os stickers removidos"
     )
     async def mushremove(interaction: discord.Interaction, usuario: discord.Member):
-        admin_role = interaction.guild.get_role(ADMIN_ROLE_ID)
-        if admin_role not in interaction.user.roles:
+        admin_role = any(interaction.guild.get_role(role_id) in interaction.user.roles for role_id in ADMIN_ROLE_ID)
+        if not admin_role:
             await interaction.response.send_message("❌ Você não tem permissão para usar este comando!", ephemeral=True)
             return
         
