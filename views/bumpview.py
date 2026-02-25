@@ -1,16 +1,10 @@
  
 
 import discord
-from discord.ext import commands
-
-intents = discord.Intents.default()
-intents.message_content = True
-
-bot = commands.Bot('!', intents=intents)
 
 class BumpComponents(discord.ui.LayoutView):    
     def __init__(self):
-        super().__init__()
+        super().__init__(timeout=None)
         self.container1 = discord.ui.Container(
             discord.ui.TextDisplay(content="## 𐔌 ♻️. É HORA DO BUMP.ᐟ ֹ ₊ ꒱\n➦ Já se passaram 2 horas. É hora de utilizar o comando /bump novamente para divulgar a comunidade! .𖥔 ݁ ˖\n"),
             discord.ui.Separator(visible=True, spacing=discord.SeparatorSpacing.large),

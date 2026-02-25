@@ -1,14 +1,14 @@
 import time
 import discord
 from discord.ext import commands
-from views import WelcomeComponents, ColorsView, NormalColorsView, Components, RarePingView, BumpComponents
+from views import WelcomeComponents, ColorsView, NormalColorsView, RarePingComponents, RarePingView, BumpComponents, HelpView
 
 async def register(bot):
     @bot.command()
     async def send_components(ctx):
         await ctx.send(view=WelcomeComponents())
 
-    @bot.tree.command(name="ping")
+    @bot.tree.command(name="ping", description="Mede o ping do bot", guild=discord.Object(id=1389947780683796701))
     async def ping(interaction: discord.Interaction):
         start = time.perf_counter()
         await interaction.response.send_message("Pinging...")
@@ -28,7 +28,7 @@ async def register(bot):
 
     @bot.command()
     async def rareping(ctx):
-        await ctx.send(view=Components())
+        await ctx.send(view=RarePingComponents())
         await ctx.send(view=RarePingView())
 
     @bot.command()
@@ -39,7 +39,15 @@ async def register(bot):
     async def test(ctx):
         await ctx.send("Test command working!")
 
-    @bot.tree.command(name="testbump", description="Simula um bump done para teste")
+    @bot.tree.command(
+    name="help",
+    description="Mostra todos os comandos disponíveis",
+    guild=discord.Object(id=1389947780683796701)
+)
+    async def help_command(interaction: discord.Interaction):
+        await interaction.response.send_message(view=HelpView())
+
+    @bot.tree.command(name="testbump", description="Simula um bump done para teste", guild=discord.Object(id=1389947780683796701))
     async def testbump(interaction: discord.Interaction):
         # Verificar se está no canal correto
         if interaction.channel.id != 1389979510975500349:

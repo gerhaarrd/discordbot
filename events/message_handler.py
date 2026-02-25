@@ -17,14 +17,7 @@ async def handle_bump_detection(bot, message):
         
     print("Bump done detected")
     
-    async for msg in message.channel.history(limit=10, before=message):
-        if msg.content.strip() == "/bump" and not msg.author.bot:
-            bumper = msg.author.mention
-            break
-    else:
-        bumper = "alguém"
-    
-    await message.channel.send(f"✅ Bump detectado! Obrigado {bumper}! Vou lembrar em 2 horas para dar o próximo bump! ⏰")
+    await message.channel.send(f"✅ Bump detectado! Vou lembrar em 2 horas para dar o próximo bump! ⏰")
     
     from events.bump import bump_reminder
     import asyncio
