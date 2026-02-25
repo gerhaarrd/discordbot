@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 from config import TOKEN
+import asyncio
 
 
 import events.ready as ready_event
@@ -30,9 +31,25 @@ async def load_modules():
     await mush_commands.register(bot)
     print("mush_commands loaded")
     print("bump_event loaded")
-    await esporos_event.register(bot)
+    #await esporos_event.register(bot)
     print("All modules loaded!")
     print([command.name for command in bot.commands])
+    
+    # Sincronizar comandos uma única vez durante o setup
+    try:
+        from config import GUILD_ID
+        if GUILD_ID:
+            import discord
+            guild_obj = discord.Object(id=int(GUILD_ID))
+            
+            # Sincronizar comandos diretamente para a guild
+            synced = await bot.tree.sync(guild=guild_obj)
+            print(f"Sincronizados {len(synced)} comandos no servidor {GUILD_ID}")
+        else:
+            synced = await bot.tree.sync()
+            print(f"Sincronizados {len(synced)} comandos globais")
+    except Exception as e:
+        print("Erro ao sincronizar comandos:", e)
 
 @bot.event
 async def setup_hook():

@@ -42,7 +42,7 @@ class Components(discord.ui.LayoutView):
         accent_colour=discord.Colour(15419688),
     )
 
-class RarePingView(discord.ui.View):
+class RarePingView(discord.ui.LayoutView):
     def __init__(self):
         super().__init__(timeout=None)
         self.add_item(RarePingButton())

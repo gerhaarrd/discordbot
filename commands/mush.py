@@ -40,7 +40,7 @@ def save_usage(usage_data, relations_data):
 mushadd_usage, mushadd_relations = load_usage()
 
 async def register(bot):
-    @bot.tree.command(name="mushadd", description="Adiciona um usuário a um cargo de cogumelos")
+    @bot.tree.command(name="mushadd", description="Adiciona um usuário a um cargo de cogumelos", guild=discord.Object(id=1389947780683796701))
     @app_commands.describe(
         usuario="Usuário que receberá o cargo",
         cargo="Cargo específico para adicionar"
@@ -81,7 +81,7 @@ async def register(bot):
             print(f"Erro ao adicionar sticker: {e}")
             await interaction.response.send_message(f"❌ Erro ao adicionar sticker: {e}", ephemeral=True)
 
-    @bot.tree.command(name="mushremove", description="Remove todos os stickers de um usuário")
+    @bot.tree.command(name="mushremove", description="Remove todos os stickers de um usuário", guild=discord.Object(id=1389947780683796701))
     @app_commands.describe(
         usuario="Usuário que terá os stickers removidos"
     )
