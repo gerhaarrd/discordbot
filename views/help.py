@@ -29,7 +29,20 @@ class HelpView(discord.ui.LayoutView):
         discord.ui.Separator(visible=True, spacing=discord.SeparatorSpacing.large),
 
         discord.ui.TextDisplay(
-            content="## 🍄 **Comandos de Cogumelos**\n\n"
+            content="## ⭐ **Comandos de Reputação**\n\n"
+                    "**/rep <@user> [motivo]** - Dá +1 ponto de reputação a um usuário.\n"
+                    "⏱ Cooldown de 3h global e 6h por par.\n"
+                    "🚫 Não pode dar para si mesmo ou bots.\n\n"
+                    "**/reppoints [@user]** - Mostra reputação total e posição no ranking.\n\n"
+                    "**/reptop** - Exibe o Top 10 usuários com mais reputação.\n\n"
+                    "**/rephistory [@user]** - Mostra histórico das últimas 5 reputações recebidas.\n\n"
+                    "── .✦ Construa sua reputação e suba no ranking do servidor! ˎˊ˗"
+        ),
+
+        discord.ui.Separator(visible=True, spacing=discord.SeparatorSpacing.large),
+
+        discord.ui.TextDisplay(
+            content="## 🍄 **Comandos de Stickers**\n\n"
                     "**/mushadd <@user> <@role>** - Adiciona um sticker (cargo de cogumelo) a um usuário.\n"
                     "🔒 Apenas Mush Crystals podem usar.\n"
                     "⚠ Cada usuário só pode ter um sticker.\n\n"

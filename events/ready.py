@@ -24,9 +24,9 @@ async def update_status(bot):
     statuses = [
         "🍄 .gg/soull",
         "🍄 Protegendo o servidor",
-        "🍄 Cogumelos mágicos",
         "🍄 .gg/soull",
-        "🍄 Sistema ativo",
+        "🍄 Desenvolvido por 67xqw!",
+        "🍄 Use /help para obter ajuda",
         "🍄 .gg/soull"
     ]
     
