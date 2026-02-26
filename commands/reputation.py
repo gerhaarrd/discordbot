@@ -3,7 +3,7 @@ from discord.ext import commands
 from discord import app_commands
 import json
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Tuple
 import os
 
@@ -51,9 +51,30 @@ class ReputationSystem:
             }
         return self.data["users"][user_id_str]
     
+    def get_local_timestamp() -> float:
+        """Retorna timestamp ajustado para o fuso horário local (Brasil UTC-3)"""
+        # Obter timestamp UTC e ajustar para -3 horas
+        utc_time = datetime.now(timezone.utc)
+        local_time = utc_time - timedelta(hours=3)  # UTC-3 (Brasil)
+        return local_time.timestamp()
+    
+    def debug_timestamps(self):
+        """Mostra informações de debug sobre timestamps"""
+        utc_ts = time.time()
+        local_ts = self.get_local_timestamp()
+        
+        print(f"🔍 Debug de Timestamps:")
+        print(f"   UTC Timestamp: {utc_ts}")
+        print(f"   Local Timestamp: {local_ts}")
+        print(f"   Diferença: {utc_ts - local_ts} segundos ({(utc_ts - local_ts)/3600:.1f} horas)")
+        print(f"   UTC Time: {datetime.fromtimestamp(utc_ts).strftime('%d/%m %H:%M:%S')}")
+        print(f"   Local Time: {datetime.fromtimestamp(local_ts).strftime('%d/%m %H:%M:%S')}")
+        
+        return local_ts
+    
     def check_cooldowns(self, giver_id: int, receiver_id: int) -> Tuple[bool, str]:
         """Verifica todos os cooldowns e retorna (pode_dar, motivo)"""
-        current_time = time.time()
+        current_time = self.get_local_timestamp()
         giver_id_str = str(giver_id)
         receiver_id_str = str(receiver_id)
         
@@ -95,7 +116,7 @@ class ReputationSystem:
         if not can_give:
             return False
         
-        current_time = time.time()
+        current_time = self.get_local_timestamp()
         giver_id_str = str(giver_id)
         receiver_id_str = str(receiver_id)
         
@@ -415,5 +436,64 @@ async def register(bot):
         embed.timestamp = discord.utils.utcnow()
         
         await interaction.response.send_message(embed=embed)
+    
+    @bot.tree.command(
+        name="repdebug",
+        description="Mostra informações de debug do sistema de reputação",
+        guild=discord.Object(id=1389947780683796701)
+    )
+    async def repdebug_command(interaction: discord.Interaction):
+        """Comando de debug para verificar timestamps"""
+        
+        # Verificar se é admin (simplificado - você pode ajustar para seus roles)
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message("❌ Apenas administradores podem usar este comando!", ephemeral=True)
+            return
+        
+        debug_info = rep_system.debug_timestamps()
+        
+        embed = discord.Embed(
+            title="🔍 Debug - Sistema de Reputação",
+            description="Informações de depuração dos timestamps",
+            color=discord.Color.orange()
+        )
+        
+        embed.add_field(
+            name="⏰ Timestamp Local",
+            value=f"`{debug_info}`",
+            inline=True
+        )
+        
+        embed.add_field(
+            name="📅 Data/Hora Local",
+            value=f"`{datetime.fromtimestamp(debug_info).strftime('%d/%m/%Y %H:%M:%S')}`",
+            inline=True
+        )
+        
+        embed.add_field(
+            name="📊 Total de Usuários",
+            value=f"`{len(rep_system.data['users'])}`",
+            inline=True
+        )
+        
+        embed.add_field(
+            name="🔄 Cooldowns Globais",
+            value=f"`{len(rep_system.data['cooldowns']['global'])}`",
+            inline=True
+        )
+        
+        embed.add_field(
+            name="👥 Cooldowns por Par",
+            value=f"`{len(rep_system.data['cooldowns']['pairs'])}`",
+            inline=True
+        )
+        
+        embed.add_field(
+            name="⚡ Cooldowns Mútuos",
+            value=f"`{len(rep_system.data['cooldowns']['mutual'])}`",
+            inline=True
+        )
+        
+        await interaction.response.send_message(embed=embed, ephemeral=True)
     
     print("Sistema de reputação carregado com sucesso!")
