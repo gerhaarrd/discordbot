@@ -1,8 +1,7 @@
 import discord
-import json
-import os
 from discord.ext import commands
 from discord import app_commands
+import database
 
 ADMIN_ROLE_ID = [1404088289610301441, 1459225578304569532]
 MUSHROOM_ROLES = [
@@ -12,32 +11,6 @@ MUSHROOM_ROLES = [
     1475156211409358984, 
     1475156474136367286
 ]
- 
-USAGE_FILE = "mushadd_usage.json"
-
-def load_usage():
-    """Carrega os dados de uso do arquivo JSON."""
-    if os.path.exists(USAGE_FILE):
-        try:
-            with open(USAGE_FILE, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                usage = {int(k): v for k, v in data.items()}
-                return usage, {}
-        except Exception as e:
-            print(f"Erro ao carregar arquivo de uso: {e}")
-            return {}, {}
-    return {}, {}
-
-def save_usage(usage_data, relations_data):
-    """Salva os dados de uso no arquivo JSON."""
-    try:
-        optimized_data = {str(k): v for k, v in usage_data.items()}
-        with open(USAGE_FILE, 'w', encoding='utf-8') as f:
-            json.dump(optimized_data, f, separators=(',', ':'))
-    except Exception as e:
-        print(f"Erro ao salvar arquivo de uso: {e}")
-
-mushadd_usage, mushadd_relations = load_usage()
 
 async def register(bot):
     @bot.tree.command(name="mushadd", description="Adiciona um usuário a um cargo de cogumelos", guild=discord.Object(id=1389947780683796701))
@@ -68,9 +41,8 @@ async def register(bot):
         try:
             await usuario.add_roles(cargo)
             
-            mushadd_usage[usuario.id] = True 
-            
-            save_usage(mushadd_usage, mushadd_relations)
+            # Salvar no database
+            database.enable_mush(str(usuario.id))
             
             await interaction.response.send_message(f"✅ Sticker {cargo.mention} adicionado para {usuario.mention}!", ephemeral=True)
                 
@@ -104,13 +76,14 @@ async def register(bot):
         try:
             await usuario.remove_roles(*roles_to_remove)
             
-            if usuario.id in mushadd_usage:
-                del mushadd_usage[usuario.id]
+            # Remover do database
+            database.disable_mush(str(usuario.id))
             
-            save_usage(mushadd_usage, mushadd_relations)
-            
-            await interaction.response.send_message(f"✅ Todos os stickers removidos de {usuario.mention}!", ephemeral=True)
-            
+            if roles_to_remove:
+                await interaction.response.send_message(f"✅ Stickers removidos de {usuario.mention}!", ephemeral=True)
+            else:
+                await interaction.response.send_message(f"ℹ️ {usuario.mention} não tem stickers para remover.", ephemeral=True)
+                
         except Exception as e:
             print(f"Erro ao remover stickers: {e}")
             await interaction.response.send_message(f"❌ Erro ao remover stickers: {e}", ephemeral=True)

@@ -8,9 +8,11 @@ import events.ready as ready_event
 import events.member_join as join_event
 import events.message_handler as message_event
 import events.bump as bump_event
+import events.voice_tracker as voice_tracker_event
 import commands.misc as misc_commands
 import commands.mush as mush_commands
 import commands.reputation as reputation_commands
+import commands.voice_commands as voice_commands
 import events.esporos as esporos_event
 
 intents = discord.Intents.default()
@@ -33,6 +35,10 @@ async def load_modules():
     print("mush_commands loaded")
     await reputation_commands.register(bot)
     print("reputation_commands loaded")
+    await voice_commands.register(bot)
+    print("voice_commands loaded")
+    await voice_tracker_event.register(bot)
+    print("voice_tracker loaded")
     print("bump_event loaded")
     #await esporos_event.register(bot)
     print("All modules loaded!")

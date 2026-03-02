@@ -6,6 +6,15 @@ async def register(bot):
     async def on_ready():
         print(f"Bot conectado como {bot.user}")
         
+        # Inicializar VoiceTracker
+        print("🤖 Bot pronto, inicializando VoiceTracker...")
+        from events.voice_tracker import get_voice_tracker
+        voice_tracker = get_voice_tracker()
+        if voice_tracker:
+            await voice_tracker.initialize()
+        else:
+            print("❌ VoiceTracker não encontrado")
+        
         # Iniciar o status automático após o bot estar pronto
         asyncio.create_task(update_status(bot))
         
