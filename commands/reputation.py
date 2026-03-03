@@ -56,8 +56,12 @@ class ReputationSystem:
             remaining = timedelta(seconds=int(3 * 3600 - (current_time - global_cooldown)))
             return False, f"Você deve esperar {remaining} para dar reputação novamente."
         
-        # Cooldown específico por par (6h) - implementar se necessário
-        # Por enquanto, usar apenas cooldown global
+        # Bloqueio mútuo de 3h:
+        # Se A deu rep para B recentemente, B não pode dar rep para A por 3h.
+        reverse_last_rep = database.get_last_given_timestamp(receiver_id_str, giver_id_str)
+        if reverse_last_rep and current_time - reverse_last_rep < 3 * 3600:
+            remaining = timedelta(seconds=int(3 * 3600 - (current_time - reverse_last_rep)))
+            return False, f"Bloqueio mútuo ativo. Aguarde {remaining} para retribuir reputação para este usuário."
         
         return True, ""
     

@@ -156,6 +156,20 @@ def get_given_to(user_id: str) -> Dict:
         
         return {row["receiver_id"]: row["timestamp"] for row in cursor.fetchall()}
 
+def get_last_given_timestamp(giver_id: str, receiver_id: str) -> Optional[float]:
+    """Obtém o timestamp da última reputação dada de giver -> receiver"""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT timestamp FROM rep_given_to
+            WHERE user_id = ? AND receiver_id = ?
+            """,
+            (giver_id, receiver_id),
+        )
+        result = cursor.fetchone()
+        return result["timestamp"] if result else None
+
 # ===== FUNÇÕES DE COOLDOWN =====
 
 def update_cooldown(user_id: str, cooldown_type: str, timestamp: float):
