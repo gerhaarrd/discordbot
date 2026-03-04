@@ -1,10 +1,9 @@
 import discord
-from discord.ext import commands
 import asyncio
 
 role_id = 1475160585078308895
 channel1 = 1389947781778772132
-channel2 = 1474604374620766430
+channel2 = 1476989026274902198
 AUTO_DELETE_SECONDS = 8 * 60
 
 
@@ -37,24 +36,29 @@ async def register(bot):
     
     async def esporos_task():
         await bot.wait_until_ready()
+        
+        async def send_esporos(channel_id: int, label: str):
+            channel = bot.get_channel(channel_id)
+            if channel is None:
+                try:
+                    channel = await bot.fetch_channel(channel_id)
+                except Exception as e:
+                    print(f"Error fetching channel {label}: {e}")
+                    return
+
+            try:
+                await channel.send(view=Components(), delete_after=AUTO_DELETE_SECONDS)
+                print(f"Esporos message sent to channel {label}")
+            except Exception as e:
+                print(f"Error sending to channel {label}: {e}")
+
+        # Dispara imediatamente ao iniciar o bot
+        await send_esporos(channel1, "1 (startup)")
+        await send_esporos(channel2, "2 (startup)")
+
         while not bot.is_closed():
-            ch1 = bot.get_channel(channel1)
-            ch2 = bot.get_channel(channel2)
-            
-            if ch1:
-                try:
-                    await ch1.send(view=Components(), delete_after=AUTO_DELETE_SECONDS)
-                    print("Esporos message sent to channel 1")
-                except Exception as e:
-                    print(f"Error sending to channel 1: {e}")
-            
-            if ch2:
-                try:
-                    await ch2.send(view=Components(), delete_after=AUTO_DELETE_SECONDS)
-                    print("Esporos message sent to channel 2")
-                except Exception as e:
-                    print(f"Error sending to channel 2: {e}")
-            
             await asyncio.sleep(3 * 60 * 60)
+            await send_esporos(channel1, "1")
+            await send_esporos(channel2, "2")
     
     bot.loop.create_task(esporos_task())
