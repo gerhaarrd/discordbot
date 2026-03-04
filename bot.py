@@ -40,7 +40,7 @@ async def load_modules():
     await voice_tracker_event.register(bot)
     print("voice_tracker loaded")
     print("bump_event loaded")
-    #await esporos_event.register(bot)
+    await esporos_event.register(bot)
     print("All modules loaded!")
     print([command.name for command in bot.commands])
     

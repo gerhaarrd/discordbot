@@ -5,6 +5,7 @@ import asyncio
 role_id = 1475160585078308895
 channel1 = 1389947781778772132
 channel2 = 1474604374620766430
+AUTO_DELETE_SECONDS = 8 * 60
 
 
 class Components(discord.ui.LayoutView):    
@@ -42,14 +43,14 @@ async def register(bot):
             
             if ch1:
                 try:
-                    await ch1.send(view=Components())
+                    await ch1.send(view=Components(), delete_after=AUTO_DELETE_SECONDS)
                     print("Esporos message sent to channel 1")
                 except Exception as e:
                     print(f"Error sending to channel 1: {e}")
             
             if ch2:
                 try:
-                    await ch2.send(view=Components())
+                    await ch2.send(view=Components(), delete_after=AUTO_DELETE_SECONDS)
                     print("Esporos message sent to channel 2")
                 except Exception as e:
                     print(f"Error sending to channel 2: {e}")

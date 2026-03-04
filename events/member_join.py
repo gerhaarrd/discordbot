@@ -1,6 +1,8 @@
 from config import GUILD_ID
 from views import WelcomeComponents
 
+AUTO_DELETE_SECONDS = 8 * 60
+
 async def register(bot):
     @bot.event
     async def on_member_join(member):
@@ -22,14 +24,14 @@ async def register(bot):
 
             if channel1:
                 try:
-                    await bot.get_channel(channel1).send(mensagem)
+                    await bot.get_channel(channel1).send(mensagem, delete_after=AUTO_DELETE_SECONDS)
                     print("enviado no canal 1")
                 except Exception as e:
                     print(f"Erro ao enviar no canal 1:", e)
 
             if channel2:
                 try:
-                    await bot.get_channel(channel2).send(mensagem2)
+                    await bot.get_channel(channel2).send(mensagem2, delete_after=AUTO_DELETE_SECONDS)
                     print("enviado no canal 2")
                 except Exception as e:
                     print(f"Erro ao enviar no canal 2:", e)
