@@ -15,7 +15,13 @@ def get_voice_tracker():
 class VoiceTracker:
     def __init__(self, bot):
         self.bot = bot
-        self.ranking_channel_id = 1477857188667068467  # ID do canal para ranking
+        self.guild_id = 1389947780683796701
+        self.ranking_channel_id = 1477861769497149522  # ID do canal para ranking
+        self.top_roles = {
+            1: 1478725893403836536,
+            2: 1478726585480908994,
+            3: 1478727489554612265,
+        }
         
         # Criar tabelas do voice tracking
         database.create_voice_tables()
@@ -23,6 +29,21 @@ class VoiceTracker:
         
         # Iniciar task de ranking
         self.voice_ranking_task.start()
+
+    async def _get_guild_member(self, user_id: int):
+        """Busca membro no cache e faz fallback para API."""
+        guild = self.bot.get_guild(self.guild_id)
+        if not guild:
+            return None
+
+        member = guild.get_member(user_id)
+        if member:
+            return member
+
+        try:
+            return await guild.fetch_member(user_id)
+        except Exception:
+            return None
     
     async def initialize(self):
         """Inicialização assíncrona - envia mensagem inicial se não existir"""
@@ -54,24 +75,22 @@ class VoiceTracker:
             print("📤 Enviando nova mensagem de ranking...")
             
             # Obter dados atuais
-            top5 = database.get_top5_voice_time()
-            print(f"📊 Top 5 encontrado: {len(top5)} usuários")
+            top10 = database.get_top_voice_time(limit=10)
+            print(f"📊 Top 10 encontrado: {len(top10)} usuários")
             
             # Obter dados reais dos usuários
             ranking_data = []
-            for user_id, seconds in top5:
+            for user_id, seconds in top10:
                 try:
-                    member = self.bot.get_user(int(user_id))
-                    if not member:
-                        # Tentar buscar do guild se não encontrar no cache
-                        guild = self.bot.get_guild(1389947780683796701)
-                        member = guild.get_member(int(user_id)) if guild else None
+                    member = await self._get_guild_member(int(user_id))
                     
                     if member:
                         time_str = database.format_voice_time(seconds)
                         ranking_data.append((member, time_str))
                 except Exception as e:
                     print(f"Erro ao processar usuário {user_id}: {e}")
+
+            await self.update_top_roles(top10)
             
             # Enviar nova mensagem
             from views.calltime import RankingCallComponents
@@ -119,10 +138,10 @@ class VoiceTracker:
         try:
             print(f"Executando ranking de voice do dia {date_str}")
             
-            # Obter top 5 usuários
-            top5 = database.get_top5_voice_time()
+            # Obter top 10 usuários
+            top10 = database.get_top_voice_time(limit=10)
             
-            if not top5:
+            if not top10:
                 print("Nenhum usuário com tempo em call registrado")
                 database.update_last_voice_ranking_run(date_str)
                 # NÃO resetar tempo de call
@@ -130,19 +149,17 @@ class VoiceTracker:
             
             # Obter dados reais dos usuários
             ranking_data = []
-            for user_id, seconds in top5:
+            for user_id, seconds in top10:
                 try:
-                    member = self.bot.get_user(int(user_id))
-                    if not member:
-                        # Tentar buscar do guild se não encontrar no cache
-                        guild = self.bot.get_guild(1389947780683796701)
-                        member = guild.get_member(int(user_id)) if guild else None
+                    member = await self._get_guild_member(int(user_id))
                     
                     if member:
                         time_str = database.format_voice_time(seconds)
                         ranking_data.append((member, time_str))
                 except Exception as e:
                     print(f"Erro ao processar usuário {user_id}: {e}")
+
+            await self.update_top_roles(top10)
             
             # Tentar apagar mensagem anterior
             try:
@@ -175,24 +192,19 @@ class VoiceTracker:
             # Atualizar controle (mas NÃO resetar tempo de call)
             database.update_last_voice_ranking_run(date_str)
             
-            print(f"Ranking de voice atualizado: {len(top5)} usuários")
+            print(f"Ranking de voice atualizado: {len(top10)} usuários")
             
         except Exception as e:
             print(f"Erro no ranking diário: {e}")
     
-    async def generate_ranking_message(self, top5: list) -> str:
+    async def generate_ranking_message(self, top10: list) -> str:
         """Gera a mensagem formatada do ranking"""
         lines = []
         
-        for i, (user_id, seconds) in enumerate(top5, 1):
+        for i, (user_id, seconds) in enumerate(top10, 1):
             try:
                 # Obter objeto do usuário
-                user = self.bot.get_user(int(user_id))
-                if not user:
-                    # Tentar buscar do guild se não encontrar no cache
-                    guild = self.bot.get_guild(1389947780683796701)
-                    if guild:
-                        user = guild.get_member(int(user_id))
+                user = await self._get_guild_member(int(user_id))
                 
                 user_mention = user.mention if user else f"<@{user_id}>"
                 time_formatted = database.format_voice_time(seconds)
@@ -203,11 +215,52 @@ class VoiceTracker:
                 print(f"Erro ao processar usuário {user_id}: {e}")
                 lines.append(f"@<@{user_id}> [{database.format_voice_time(seconds)}]")
         
-        # Preencher com espaços vazios se tiver menos de 5
-        while len(lines) < 5:
+        # Preencher com espaços vazios se tiver menos de 10
+        while len(lines) < 10:
             lines.append("@usuário [0h 0m]")
-        
+
         return "\n".join(lines)
+
+    async def update_top_roles(self, top_users: list):
+        """Atualiza os cargos de top 1, 2 e 3 de acordo com o ranking atual."""
+        guild = self.bot.get_guild(self.guild_id)
+        if not guild:
+            print(f"❌ Guild {self.guild_id} não encontrada para atualizar cargos de ranking")
+            return
+
+        expected_members = {}
+        for position, role_id in self.top_roles.items():
+            if len(top_users) >= position:
+                user_id = int(top_users[position - 1][0])
+                expected_members[role_id] = user_id
+            else:
+                expected_members[role_id] = None
+
+        for role_id, expected_user_id in expected_members.items():
+            role = guild.get_role(role_id)
+            if not role:
+                print(f"⚠️ Cargo {role_id} não encontrado")
+                continue
+
+            # Remove o cargo de quem não deveria manter a posição.
+            for member in list(role.members):
+                if expected_user_id is None or member.id != expected_user_id:
+                    try:
+                        await member.remove_roles(role, reason="Atualização automática do ranking de voice")
+                    except Exception as e:
+                        print(f"Erro removendo cargo {role_id} de {member.id}: {e}")
+
+            # Garante o cargo para quem está na posição.
+            if expected_user_id is not None:
+                member = await self._get_guild_member(expected_user_id)
+                if not member:
+                    print(f"⚠️ Membro {expected_user_id} não encontrado para o cargo {role_id}")
+                    continue
+                if role not in member.roles:
+                    try:
+                        await member.add_roles(role, reason="Atualização automática do ranking de voice")
+                    except Exception as e:
+                        print(f"Erro adicionando cargo {role_id} para {expected_user_id}: {e}")
 
 async def setup(bot):
     """Setup do voice tracker"""

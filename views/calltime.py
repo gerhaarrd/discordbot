@@ -37,13 +37,7 @@ class RankingCallComponents(discord.ui.LayoutView):
         self.add_item(self.container1)
 
     def _build_ranking_text(self, ranking_data: list) -> str:
-        medals = [
-            ":first_place:",
-            ":second_place:",
-            ":third_place:",
-            "🏅",
-            "🏅"
-        ]
+        medals = [":first_place:", ":second_place:", ":third_place:"]
 
         header = (
             "### ˖𑣲:herb:⋆ 𝐑𝐀𝐍𝐊𝐈𝐍𝐆 𝐂𝐀𝐋𝐋𝐒 ݁ ˖ ◝\n"
@@ -53,18 +47,22 @@ class RankingCallComponents(discord.ui.LayoutView):
 
         body = ""
 
-        # Garantir que sempre tenha 5 posições
-        for index in range(3):
+        # Garantir que sempre tenha 10 posições
+        for index in range(10):
+            top_label = f"**Top #{index + 1}**"
+            if index < 3:
+                top_label = f"{top_label} {medals[index]}"
+
             if index < len(ranking_data):
                 member, time_str = ranking_data[index]
                 body += (
-                    f"ᯓ★ {member.mention} 𖦹˙— **Top #{index+1}** {medals[index]}\n"
+                    f"ᯓ★ {member.mention} 𖦹˙— {top_label}\n"
                     f"- {time_str}\n\n"
                 )
             else:
                 # Preencher com usuário vazio
                 body += (
-                    f"ᯓ★ @usuário 𖦹˙— **Top #{index+1}** {medals[index]}\n"
+                    f"ᯓ★ @usuário 𖦹˙— {top_label}\n"
                     f"- 0h 0m\n\n"
                 )
 

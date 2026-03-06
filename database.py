@@ -398,8 +398,8 @@ def add_voice_time(user_id: str, seconds: int):
             total_seconds = total_seconds + excluded.total_seconds
         ''', (user_id, seconds))
 
-def get_top5_voice_time() -> List[Tuple[str, int]]:
-    """Retorna top 5 usuários com mais tempo em call no dia"""
+def get_top_voice_time(limit: int = 10) -> List[Tuple[str, int]]:
+    """Retorna top usuários com mais tempo em call no dia"""
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute('''
@@ -407,10 +407,14 @@ def get_top5_voice_time() -> List[Tuple[str, int]]:
             FROM voice_time_daily
             WHERE total_seconds > 0
             ORDER BY total_seconds DESC
-            LIMIT 5
-        ''')
+            LIMIT ?
+        ''', (limit,))
         
         return [(row["user_id"], row["total_seconds"]) for row in cursor.fetchall()]
+
+def get_top5_voice_time() -> List[Tuple[str, int]]:
+    """Compatibilidade: retorna top 5 usuários com mais tempo em call no dia"""
+    return get_top_voice_time(limit=5)
 
 def reset_daily_voice_time():
     """Reseta o tempo diário de todos os usuários"""

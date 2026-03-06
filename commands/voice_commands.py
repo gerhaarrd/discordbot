@@ -157,12 +157,12 @@ async def register(bot):
         try:
             await interaction.response.defer()
             
-            # Obter top 5
-            top5 = database.get_top5_voice_time()
+            # Obter top 10
+            top10 = database.get_top_voice_time(limit=10)
             
             # Obter dados reais dos usuários
             ranking_data = []
-            for user_id, seconds in top5:
+            for user_id, seconds in top10:
                 try:
                     member = interaction.guild.get_member(int(user_id))
                     if member:
@@ -195,6 +195,7 @@ async def register(bot):
             from events.voice_tracker import get_voice_tracker
             voice_tracker = get_voice_tracker()
             if voice_tracker:
+                await voice_tracker.update_top_roles(top10)
                 channel = interaction.client.get_channel(voice_tracker.ranking_channel_id)
                 if channel:
                     message = await channel.send(view=view)
@@ -203,7 +204,7 @@ async def register(bot):
                     print(f"✅ Nova mensagem de ranking enviada: {message.id}")
                     
                     await interaction.followup.send(
-                        f"✅ Ranking atualizado com sucesso! {len(top5)} usuários processados.",
+                        f"✅ Ranking atualizado com sucesso! {len(top10)} usuários processados.",
                         ephemeral=True
                     )
                 else:
