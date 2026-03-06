@@ -41,7 +41,6 @@ async def register(bot):
         try:
             await usuario.add_roles(cargo)
             
-            # Salvar no database
             database.enable_mush(str(usuario.id))
             
             await interaction.response.send_message(f"✅ Sticker {cargo.mention} adicionado para {usuario.mention}!", ephemeral=True)
@@ -76,7 +75,6 @@ async def register(bot):
         try:
             await usuario.remove_roles(*roles_to_remove)
             
-            # Remover do database
             database.disable_mush(str(usuario.id))
             
             if roles_to_remove:

@@ -52,7 +52,6 @@ async def register(bot):
             except Exception as e:
                 print(f"Error sending to channel {label}: {e}")
 
-        # Dispara imediatamente ao iniciar o bot
         await send_esporos(channel1, "1 (startup)")
         await send_esporos(channel2, "2 (startup)")
 

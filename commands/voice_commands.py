@@ -15,7 +15,6 @@ async def register(bot):
     async def resetvoicetime_command(interaction: discord.Interaction):
         """Reseta o tempo de call de todos os usuários"""
         
-        # Verificar se é admin
         if not interaction.user.guild_permissions.administrator:
             await interaction.response.send_message(
                 "❌ Apenas administradores podem usar este comando!",
@@ -24,10 +23,8 @@ async def register(bot):
             return
         
         try:
-            # Defer para evitar timeout
             await interaction.response.defer()
             
-            # Resetar tempo de call de todos
             database.reset_daily_voice_time()
             
             await interaction.followup.send(
@@ -50,38 +47,30 @@ async def register(bot):
         """Mostra estatísticas individuais do usuário"""
         
         try:
-            # Defer para evitar timeout
             await interaction.response.defer()
             
-            # Obter dados do usuário
             user_id = str(interaction.user.id)
             user_voice_data = database.get_user_voice_time(user_id)
             
-            # Obter ranking completo para calcular posição
             all_users = database.get_all_voice_times()
             
-            # Calcular posição do usuário
             user_position = None
             for i, (uid, seconds) in enumerate(all_users, 1):
                 if uid == user_id:
                     user_position = i
                     break
             
-            # Verificar se está em call agora
             active_sessions = database.get_active_voice_sessions()
             in_call_now = user_id in [uid for uid, _ in active_sessions]
             
-            # Formatar tempo
             time_str = database.format_voice_time(user_voice_data) if user_voice_data else "0h 0m"
             
-            # Criar embed personalizado
             embed = discord.Embed(
                 title=f"📊 Estatísticas de {interaction.user.display_name}",
                 description=f"Aqui estão suas estatísticas de voice call:",
                 color=discord.Color.blue()
             )
             
-            # Estatísticas individuais
             embed.add_field(
                 name="⏱️ Tempo Total em Call",
                 value=f"**{time_str}**",
@@ -100,7 +89,6 @@ async def register(bot):
                 inline=True
             )
             
-            # Informações adicionais
             total_users = len(all_users)
             embed.add_field(
                 name="📈 Informações Adicionais",
@@ -108,7 +96,6 @@ async def register(bot):
                 inline=False
             )
             
-            # Se não está no top 3, mostrar quem está
             if user_position and user_position > 3:
                 top3 = all_users[:3]
                 top3_text = ""
@@ -157,10 +144,8 @@ async def register(bot):
         try:
             await interaction.response.defer()
             
-            # Obter top 10
             top10 = database.get_top_voice_time(limit=10)
             
-            # Obter dados reais dos usuários
             ranking_data = []
             for user_id, seconds in top10:
                 try:
@@ -171,7 +156,6 @@ async def register(bot):
                 except Exception as e:
                     print(f"Erro ao processar usuário {user_id}: {e}")
             
-            # Apagar mensagem anterior
             try:
                 ranking_msg = database.get_ranking_message()
                 if ranking_msg:
@@ -187,11 +171,9 @@ async def register(bot):
             except Exception as e:
                 print(f"⚠️ Erro ao buscar mensagem anterior: {e}")
             
-            # Enviar nova mensagem
             from views.calltime import RankingCallComponents
             view = RankingCallComponents(ranking_data)
             
-            # Obter canal do ranking
             from events.voice_tracker import get_voice_tracker
             voice_tracker = get_voice_tracker()
             if voice_tracker:
@@ -199,7 +181,6 @@ async def register(bot):
                 channel = interaction.client.get_channel(voice_tracker.ranking_channel_id)
                 if channel:
                     message = await channel.send(view=view)
-                    # Salvar ID da nova mensagem
                     database.save_ranking_message(voice_tracker.ranking_channel_id, message.id)
                     print(f"✅ Nova mensagem de ranking enviada: {message.id}")
                     

@@ -6,7 +6,6 @@ async def register(bot):
     async def on_ready():
         print(f"Bot conectado como {bot.user}")
         
-        # Inicializar VoiceTracker
         print("🤖 Bot pronto, inicializando VoiceTracker...")
         from events.voice_tracker import get_voice_tracker
         voice_tracker = get_voice_tracker()
@@ -15,10 +14,8 @@ async def register(bot):
         else:
             print("❌ VoiceTracker não encontrado")
         
-        # Iniciar o status automático após o bot estar pronto
         asyncio.create_task(update_status(bot))
         
-        # Adicionar views persistentes
         from views import ColorsView, NormalColorsView, RarePingComponents, RarePingView, HelpView
         bot.add_view(ColorsView())
         bot.add_view(NormalColorsView())
@@ -28,8 +25,6 @@ async def register(bot):
         print("Views persistentes adicionadas")
 
 async def update_status(bot):
-    """Atualiza o status do bot periodicamente"""
-    print("Iniciando função de status automático...")
     statuses = [
         "🍄 .gg/soull",
         "🍄 Protegendo o servidor",
@@ -45,7 +40,7 @@ async def update_status(bot):
                 print(f"Mudando status para: {status}")
                 await bot.change_presence(activity=discord.Game(name=status))
                 print(f"Status alterado com sucesso para: {status}")
-                await asyncio.sleep(30)  # Muda status a cada 30 segundos
+                await asyncio.sleep(30)
             except Exception as e:
                 print(f"Erro ao atualizar status: {e}")
                 await asyncio.sleep(5)

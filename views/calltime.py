@@ -47,7 +47,6 @@ class RankingCallComponents(discord.ui.LayoutView):
 
         body = ""
 
-        # Garantir que sempre tenha 10 posições
         for index in range(10):
             top_label = f"**Top #{index + 1}**"
             if index < 3:
@@ -60,7 +59,6 @@ class RankingCallComponents(discord.ui.LayoutView):
                     f"- {time_str}\n\n"
                 )
             else:
-                # Preencher com usuário vazio
                 body += (
                     f"ᯓ★ @usuário 𖦹˙— {top_label}\n"
                     f"- 0h 0m\n\n"

@@ -13,12 +13,10 @@ class ReputationSystem:
     def __init__(self):
         self._ranking_cache = {}
         self._cache_timestamp = 0
-        self._cache_ttl = 300  # 5 minutos
+        self._cache_ttl = 300
         
-        # Pré-carregar cache para evitar lentidão na primeira chamada
         self._update_ranking_cache()
         
-        # Sistema de níveis e cargos de aura
         self.aura_levels = {
             1: {"rep_required": 150, "role_id": 1476295195006996492, "name": "Aura 1"},
             2: {"rep_required": 300, "role_id": 1476295382257504488, "name": "Aura 2"}, 
@@ -50,14 +48,11 @@ class ReputationSystem:
         giver_id_str = str(giver_id)
         receiver_id_str = str(receiver_id)
         
-        # Cooldown global de 3h por giver
         global_cooldown = database.get_cooldown(giver_id_str, "global")
-        if global_cooldown and current_time - global_cooldown < 3 * 3600:  # 3 horas
+        if global_cooldown and current_time - global_cooldown < 3 * 3600:
             remaining = timedelta(seconds=int(3 * 3600 - (current_time - global_cooldown)))
             return False, f"Você deve esperar {remaining} para dar reputação novamente."
         
-        # Bloqueio mútuo de 3h:
-        # Se A deu rep para B recentemente, B não pode dar rep para A por 3h.
         reverse_last_rep = database.get_last_given_timestamp(receiver_id_str, giver_id_str)
         if reverse_last_rep and current_time - reverse_last_rep < 3 * 3600:
             remaining = timedelta(seconds=int(3 * 3600 - (current_time - reverse_last_rep)))
@@ -67,11 +62,9 @@ class ReputationSystem:
     
     async def add_reputation(self, giver_id: int, receiver_id: int, reason: str = "", guild_id: int = None, guild: discord.Guild = None) -> bool:
         """Adiciona reputação se todas as validações passarem"""
-        # Verificar se não está dando para si mesmo
         if giver_id == receiver_id:
             return False
         
-        # Verificar cooldowns
         can_give, reason = self.check_cooldowns(giver_id, receiver_id)
         if not can_give:
             return False
@@ -81,17 +74,13 @@ class ReputationSystem:
         receiver_id_str = str(receiver_id)
         guild_id_str = str(guild_id) if guild_id else None
         
-        # Adicionar reputação usando database
         success = database.add_rep(giver_id_str, receiver_id_str, guild_id_str, reason)
         
         if success:
-            # Atualizar cooldown
             database.update_cooldown(giver_id_str, "global", current_time)
             
-            # Invalidar cache
             self._invalidate_cache()
             
-            # Atualizar cargos de aura se guild foi fornecida
             if guild:
                 receiver_data = self.get_user_data(receiver_id)
                 await self.update_user_aura_roles(receiver_id, guild, receiver_data["rep_total"])
@@ -107,23 +96,19 @@ class ReputationSystem:
         """Atualiza o cache de ranking com algoritmo otimizado"""
         current_time = time.time()
         
-        # Verificar se cache ainda é válido
         if current_time - self._cache_timestamp < self._cache_ttl and self._ranking_cache:
             return
         
-        # Construir cache otimizado usando database
         users_rep = database.get_all_users_rep()
         
-        # Armazenar no cache de forma simples
         self._ranking_cache = {
-            'top_users': [(int(uid), rep) for uid, rep in users_rep[:100]],  # Cache top 100
+            'top_users': [(int(uid), rep) for uid, rep in users_rep[:100]],
             'total_users': len(users_rep)
         }
         self._cache_timestamp = current_time
     
     def get_user_ranking(self, user_id: int) -> Tuple[int, int]:
         """Retorna (reputação, posição no ranking) - Otimizado"""
-        # Usar database diretamente - é mais rápido que cache complexo
         user_id_str = str(user_id)
         return database.get_user_ranking(user_id_str)
     
@@ -135,17 +120,14 @@ class ReputationSystem:
     def get_user_history(self, user_id: int, limit: int = 5, page: int = 1) -> List[Dict]:
         """Retorna histórico de reputações recebidas com paginação"""
         user_id_str = str(user_id)
-        history = database.get_history(user_id_str, limit=50)  # Buscar mais para paginação
+        history = database.get_history(user_id_str, limit=50)
         
-        # Paginação
         items_per_page = limit
         start_idx = (page - 1) * items_per_page
         end_idx = start_idx + items_per_page
         
-        # Pegar slice do histórico (mais recentes primeiro)
         paginated_history = history[start_idx:end_idx] if start_idx < len(history) else []
         
-        # Formatar para exibição
         formatted_history = []
         for entry in paginated_history:
             formatted_history.append({
@@ -160,12 +142,12 @@ class ReputationSystem:
     def get_history_stats(self, user_id: int) -> Dict:
         """Retorna estatísticas do histórico"""
         user_id_str = str(user_id)
-        history = database.get_history(user_id_str, 1000)  # Buscar até 1000 para estatísticas
+        history = database.get_history(user_id_str, 1000)
         total_history = len(history)
         
         return {
             "total": total_history,
-            "pages": (total_history + 4) // 5,  # 5 itens por página
+            "pages": (total_history + 4) // 5,
             "has_more": total_history > 5
         }
     
@@ -200,9 +182,8 @@ class ReputationSystem:
         
         current_level = self.get_user_level(rep_total)
         
-        # Remover todos os cargos de aura que não deveria ter
         for level_num, level_data in self.aura_levels.items():
-            if level_num > current_level:  # Remover níveis superiores
+            if level_num > current_level:
                 role = guild.get_role(level_data["role_id"])
                 if role and role in member.roles:
                     try:
@@ -210,7 +191,6 @@ class ReputationSystem:
                     except Exception as e:
                         pass
         
-        # Adicionar cargo do nível atual
         if current_level > 0:
             current_role_id = self.aura_levels[current_level]["role_id"]
             role = guild.get_role(current_role_id)
@@ -242,7 +222,6 @@ async def register(bot):
     ):
         """Comando principal para dar reputação"""
         
-        # Validações básicas
         if usuario.id == interaction.user.id:
             await interaction.response.send_message(
                 "❌ Você não pode dar reputação para si mesmo!",
@@ -257,7 +236,6 @@ async def register(bot):
             )
             return
         
-        # Tentar adicionar reputação
         success = await rep_system.add_reputation(
             giver_id=interaction.user.id,
             receiver_id=usuario.id,
@@ -267,7 +245,6 @@ async def register(bot):
         )
         
         if success:
-            # Obter nova reputação do usuário
             new_rep, position = rep_system.get_user_ranking(usuario.id)
             
             embed = discord.Embed(
@@ -290,7 +267,6 @@ async def register(bot):
             
             await interaction.response.send_message(embed=embed)
         else:
-            # Verificar motivo da falha
             can_give, reason = rep_system.check_cooldowns(interaction.user.id, usuario.id)
             
             embed = discord.Embed(
@@ -337,7 +313,6 @@ async def register(bot):
             inline=True
         )
         
-        # Adicionar nível e aura atual
         current_level = rep_system.get_user_level(rep_total)
         if current_level > 0:
             aura_name = rep_system.aura_levels[current_level]["name"]
@@ -353,12 +328,10 @@ async def register(bot):
                 inline=True
             )
         
-        # Adicionar barra de progresso visual
         if rep_total > 0:
             next_level_info = rep_system.get_next_level_info(rep_total)
             
             if next_level_info:
-                # Progresso para próximo nível
                 current_level_req = rep_system.aura_levels[next_level_info["level"] - 1]["rep_required"] if next_level_info["level"] > 1 else 0
                 progress_needed = next_level_info["rep_required"] - current_level_req
                 progress_current = rep_total - current_level_req
@@ -374,7 +347,6 @@ async def register(bot):
                     inline=False
                 )
             else:
-                # Já está no nível máximo
                 embed.add_field(
                     name="📈 Progresso",
                     value="**Nível Máximo Alcançado!** 🌟",
@@ -394,7 +366,6 @@ async def register(bot):
     async def reptop_command(interaction: discord.Interaction):
         """Mostra o ranking top 10"""
         
-        # Responder imediatamente para evitar timeout
         await interaction.response.defer()
         
         top_users = rep_system.get_top_users(10)
@@ -412,7 +383,6 @@ async def register(bot):
             color=discord.Color.gold()
         )
         
-        # Criar medalhas para top 3
         medals = ["🥇", "🥈", "🥉"]
         
         ranking_text = ""
@@ -430,7 +400,6 @@ async def register(bot):
         
         embed.add_field(name="📋 Ranking", value=ranking_text, inline=False)
         
-        # Adicionar informações do autor no ranking
         my_rep, my_position = rep_system.get_user_ranking(interaction.user.id)
         embed.add_field(
             name="📍 Sua Posição",
@@ -502,7 +471,6 @@ async def register(bot):
                 inline=False
             )
         
-        # Navegação
         navigation_text = ""
         if pagina > 1:
             navigation_text += "⬅️ **Página Anterior** (`/rephistory pagina:{pagina-1}`)"
@@ -537,11 +505,9 @@ async def register(bot):
         current_level = rep_system.get_user_level(user_rep)
         
         for level_num, level_data in rep_system.aura_levels.items():
-            # Verificar se usuário já alcançou este nível
             achieved = user_rep >= level_data["rep_required"]
             status_emoji = "✅" if achieved else "🔒"
             
-            # Calcular progresso para este nível (se não alcançado)
             if not achieved and level_num > 1:
                 prev_level_req = rep_system.aura_levels[level_num - 1]["rep_required"]
                 progress_needed = level_data["rep_required"] - prev_level_req
@@ -567,7 +533,6 @@ async def register(bot):
                 inline=False
             )
         
-        # Adicionar informação do usuário
         embed.add_field(
             name="👤 Seu Status Atual",
             value=f"**Reputação:** {user_rep} pontos\n**Nível:** {current_level}/3",
