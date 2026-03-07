@@ -53,9 +53,14 @@ class RankingCallComponents(discord.ui.LayoutView):
                 top_label = f"{top_label} {medals[index]}"
 
             if index < len(ranking_data):
-                member, time_str = ranking_data[index]
+                member_or_mention, time_str = ranking_data[index]
+                mention = (
+                    member_or_mention.mention
+                    if hasattr(member_or_mention, "mention")
+                    else str(member_or_mention)
+                )
                 body += (
-                    f"ᯓ★ {member.mention} 𖦹˙— {top_label}\n"
+                    f"ᯓ★ {mention} 𖦹˙— {top_label}\n"
                     f"- {time_str}\n\n"
                 )
             else:

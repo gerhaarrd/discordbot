@@ -3,10 +3,79 @@ from discord.ext import commands
 from discord import app_commands
 import database
 import time
+from views import ColorShopView
 
 async def register(bot):
     """Registra comandos de voice tracking"""
     
+    @bot.tree.command(
+        name="moedas",
+        description="Mostra seu saldo de moedas de call",
+        guild=discord.Object(id=1389947780683796701)
+    )
+    async def moedas_command(interaction: discord.Interaction):
+        try:
+            balance = database.get_voice_currency_balance(str(interaction.user.id))
+            await interaction.response.send_message(
+                f"🪙 Você tem **{balance}** moeda(s) de call.",
+                ephemeral=True,
+            )
+        except Exception as e:
+            await interaction.response.send_message(
+                f"❌ Erro ao consultar saldo: {e}",
+                ephemeral=True,
+            )
+
+    @bot.tree.command(
+        name="lojacores",
+        description="Abre a loja de cores gradiente por moedas de call",
+        guild=discord.Object(id=1389947780683796701)
+    )
+    async def lojacores_command(interaction: discord.Interaction):
+        balance = database.get_voice_currency_balance(str(interaction.user.id))
+        await interaction.response.send_message(view=ColorShopView(), ephemeral=True)
+        await interaction.followup.send(
+            f"🪙 Seu saldo atual: **{balance}** moeda(s).",
+            ephemeral=True,
+        )
+
+    @bot.command()
+    async def lojacores(ctx):
+        balance = database.get_voice_currency_balance(str(ctx.author.id))
+        await ctx.send(f"🪙 Saldo de {ctx.author.mention}: **{balance}** moeda(s).")
+        await ctx.send(view=ColorShopView())
+
+    @bot.command()
+    async def moedas(ctx):
+        balance = database.get_voice_currency_balance(str(ctx.author.id))
+        await ctx.send(f"🪙 {ctx.author.mention}, você tem **{balance}** moeda(s).")
+
+    @bot.tree.command(
+        name="syncmoedascall",
+        description="Sincroniza moedas com as horas já acumuladas em call (Admin only)",
+        guild=discord.Object(id=1389947780683796701)
+    )
+    async def syncmoedascall_command(interaction: discord.Interaction):
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message(
+                "❌ Apenas administradores podem usar este comando!",
+                ephemeral=True,
+            )
+            return
+
+        try:
+            await interaction.response.defer(ephemeral=True)
+            added = database.backfill_voice_currency_from_voice_totals()
+            await interaction.followup.send(
+                f"✅ Sincronização concluída. Moedas adicionadas: **{added}**.",
+                ephemeral=True,
+            )
+        except Exception as e:
+            await interaction.followup.send(
+                f"❌ Erro ao sincronizar moedas: {e}",
+                ephemeral=True,
+            )
+
     @bot.tree.command(
         name="resetvoicetime",
         description="Reseta o tempo de call de todos os usuários (Admin only)",
@@ -150,9 +219,9 @@ async def register(bot):
             for user_id, seconds in top10:
                 try:
                     member = interaction.guild.get_member(int(user_id))
-                    if member:
-                        time_str = database.format_voice_time(seconds)
-                        ranking_data.append((member, time_str))
+                    mention_or_member = member if member else f"<@{user_id}>"
+                    time_str = database.format_voice_time(seconds)
+                    ranking_data.append((mention_or_member, time_str))
                 except Exception as e:
                     print(f"Erro ao processar usuário {user_id}: {e}")
             

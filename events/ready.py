@@ -16,12 +16,13 @@ async def register(bot):
         
         asyncio.create_task(update_status(bot))
         
-        from views import ColorsView, NormalColorsView, RarePingComponents, RarePingView, HelpView
+        from views import ColorsView, NormalColorsView, RarePingComponents, RarePingView, HelpView, ColorShopView
         bot.add_view(ColorsView())
         bot.add_view(NormalColorsView())
         bot.add_view(RarePingComponents())
         bot.add_view(RarePingView())
         bot.add_view(HelpView())
+        bot.add_view(ColorShopView())
         print("Views persistentes adicionadas")
 
 async def update_status(bot):

@@ -13,10 +13,12 @@ import commands.mush as mush_commands
 import commands.reputation as reputation_commands
 import commands.voice_commands as voice_commands
 import events.esporos as esporos_event
+import events.rep_vote as rep_vote_event
 
 intents = discord.Intents.default()
 intents.members = True
 intents.message_content = True
+intents.presences = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
@@ -39,6 +41,9 @@ async def load_modules():
     await voice_tracker_event.register(bot)
     print("voice_tracker loaded")
     await esporos_event.register(bot)
+    print("esporos_event loaded")
+    await rep_vote_event.register(bot)
+    print("rep_vote_event loaded")
     print("All modules loaded!")
     print([command.name for command in bot.commands])
 

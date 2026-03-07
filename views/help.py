@@ -51,5 +51,15 @@ class HelpView(discord.ui.LayoutView):
                     "── .✦ Sistema exclusivo de personalização com stickers especiais! ˎˊ˗"
         ),
 
+        discord.ui.Separator(visible=True, spacing=discord.SeparatorSpacing.large),
+
+        discord.ui.TextDisplay(
+            content="## 🎙️ **Comandos de Call e Moedas**\n\n"
+                    "**/voicestats** - Mostra suas estatísticas de tempo em call.\n\n"
+                    "**/moedas** - Mostra seu saldo de moedas de call.\n\n"
+                    "**/lojacores** - Abre a loja para comprar cores gradiente com moedas.\n\n"
+                    "── .✦ Fique em call, ganhe moedas e personalize seu perfil! ˎˊ˗"
+        ),
+
         accent_colour=discord.Colour(15742293),
     )

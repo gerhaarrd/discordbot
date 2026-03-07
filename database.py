@@ -113,6 +113,54 @@ def add_rep(giver_id: str, receiver_id: str, guild_id: str, reason: str = "") ->
         
         return True
 
+def add_rep_amount(giver_id: str, receiver_id: str, guild_id: str, amount: int, reason: str = "") -> int:
+    """Adiciona múltiplos pontos de reputação de uma vez e retorna quantos foram creditados."""
+    if amount <= 0:
+        return 0
+
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+
+        create_user_if_not_exists(giver_id)
+        create_user_if_not_exists(receiver_id)
+
+        base_time = time.time()
+        history_rows = [
+            (receiver_id, giver_id, receiver_id, reason, base_time + (idx * 0.0001), guild_id)
+            for idx in range(amount)
+        ]
+        cursor.executemany(
+            """
+            INSERT INTO rep_history (user_id, giver_id, receiver_id, reason, timestamp, guild_id)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            history_rows,
+        )
+
+        latest_ts = base_time + ((amount - 1) * 0.0001)
+        cursor.execute(
+            """
+            INSERT OR REPLACE INTO rep_received_from (user_id, giver_id, timestamp)
+            VALUES (?, ?, ?)
+            """,
+            (receiver_id, giver_id, latest_ts),
+        )
+        cursor.execute(
+            """
+            INSERT OR REPLACE INTO rep_given_to (user_id, receiver_id, timestamp)
+            VALUES (?, ?, ?)
+            """,
+            (giver_id, receiver_id, latest_ts),
+        )
+        cursor.execute(
+            """
+            UPDATE rep_users SET rep_total = rep_total + ? WHERE user_id = ?
+            """,
+            (amount, receiver_id),
+        )
+
+        return amount
+
 def get_history(user_id: str, limit: int = 50) -> List[Dict]:
     """Obtém histórico de reputações recebidas"""
     with get_db_connection() as conn:
@@ -338,6 +386,25 @@ def create_voice_tables():
             INSERT OR IGNORE INTO ranking_control (id, last_run_date) VALUES (1, NULL)
         ''')
 
+        # Tabela de moeda de call (1h = 1 moeda por padrão)
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS voice_currency (
+                user_id TEXT PRIMARY KEY,
+                balance INTEGER NOT NULL DEFAULT 0,
+                total_earned INTEGER NOT NULL DEFAULT 0,
+                carry_seconds INTEGER NOT NULL DEFAULT 0,
+                awarded_hours INTEGER NOT NULL DEFAULT 0
+            )
+        ''')
+
+        # Compatibilidade com versões antigas da tabela voice_currency.
+        cursor.execute("PRAGMA table_info(voice_currency)")
+        columns = {row["name"] for row in cursor.fetchall()}
+        if "carry_seconds" not in columns:
+            cursor.execute("ALTER TABLE voice_currency ADD COLUMN carry_seconds INTEGER NOT NULL DEFAULT 0")
+        if "awarded_hours" not in columns:
+            cursor.execute("ALTER TABLE voice_currency ADD COLUMN awarded_hours INTEGER NOT NULL DEFAULT 0")
+
 def start_voice_session(user_id: str, joined_at: float) -> bool:
     """Inicia uma sessão de voice para o usuário"""
     with get_db_connection() as conn:
@@ -397,6 +464,134 @@ def add_voice_time(user_id: str, seconds: int):
             ON CONFLICT(user_id) DO UPDATE SET
             total_seconds = total_seconds + excluded.total_seconds
         ''', (user_id, seconds))
+
+def add_voice_currency_from_session(user_id: str, seconds: int, seconds_per_coin: int = 3600) -> int:
+    """Converte tempo de call em moedas (acumulando resto) e retorna moedas ganhas."""
+    if seconds <= 0:
+        return 0
+
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT balance, total_earned, carry_seconds FROM voice_currency WHERE user_id = ?",
+            (user_id,),
+        )
+        row = cursor.fetchone()
+
+        current_balance = row["balance"] if row else 0
+        current_total = row["total_earned"] if row else 0
+        current_carry = row["carry_seconds"] if row else 0
+
+        total_seconds = current_carry + seconds
+        earned = total_seconds // seconds_per_coin
+        new_carry = total_seconds % seconds_per_coin
+
+        if row:
+            cursor.execute(
+                """
+                UPDATE voice_currency
+                SET balance = ?, total_earned = ?, carry_seconds = ?
+                WHERE user_id = ?
+                """,
+                (current_balance + earned, current_total + earned, new_carry, user_id),
+            )
+        else:
+            cursor.execute(
+                """
+                INSERT INTO voice_currency (user_id, balance, total_earned, carry_seconds)
+                VALUES (?, ?, ?, ?)
+                """,
+                (user_id, earned, earned, new_carry),
+            )
+
+        return earned
+
+def sync_user_voice_currency_with_voice_total(user_id: str, seconds_per_coin: int = 3600) -> int:
+    """
+    Sincroniza moedas com base no total acumulado em voice_time_daily.
+    1h = 1 moeda. É idempotente via coluna awarded_hours.
+    Retorna quantas moedas foram creditadas nesta execução.
+    """
+    total_seconds = get_user_voice_time(user_id)
+    target_hours = total_seconds // seconds_per_coin
+
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT balance, total_earned, carry_seconds, awarded_hours FROM voice_currency WHERE user_id = ?",
+            (user_id,),
+        )
+        row = cursor.fetchone()
+
+        current_balance = row["balance"] if row else 0
+        current_total = row["total_earned"] if row else 0
+        current_awarded_hours = row["awarded_hours"] if row else 0
+        carry_seconds = total_seconds % seconds_per_coin
+
+        delta = target_hours - current_awarded_hours
+        if delta < 0:
+            delta = 0
+
+        if row:
+            cursor.execute(
+                """
+                UPDATE voice_currency
+                SET balance = ?, total_earned = ?, carry_seconds = ?, awarded_hours = ?
+                WHERE user_id = ?
+                """,
+                (current_balance + delta, current_total + delta, carry_seconds, target_hours, user_id),
+            )
+        else:
+            cursor.execute(
+                """
+                INSERT INTO voice_currency (user_id, balance, total_earned, carry_seconds, awarded_hours)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (user_id, delta, delta, carry_seconds, target_hours),
+            )
+
+        return delta
+
+def backfill_voice_currency_from_voice_totals(seconds_per_coin: int = 3600) -> int:
+    """
+    Sincroniza moedas para todos os usuários já registrados em voice_time_daily.
+    Retorna o total de moedas adicionadas no backfill.
+    """
+    total_added = 0
+    for user_id, _seconds in get_all_voice_times():
+        total_added += sync_user_voice_currency_with_voice_total(str(user_id), seconds_per_coin=seconds_per_coin)
+    return total_added
+
+def get_voice_currency_balance(user_id: str) -> int:
+    """Retorna o saldo atual de moeda de call do usuário."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT balance FROM voice_currency WHERE user_id = ?", (user_id,))
+        row = cursor.fetchone()
+        return row["balance"] if row else 0
+
+def spend_voice_currency(user_id: str, amount: int) -> bool:
+    """Tenta gastar moedas; retorna True se sucesso."""
+    if amount <= 0:
+        return True
+
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT balance FROM voice_currency WHERE user_id = ?", (user_id,))
+        row = cursor.fetchone()
+        current_balance = row["balance"] if row else 0
+        if current_balance < amount:
+            return False
+
+        cursor.execute(
+            """
+            INSERT INTO voice_currency (user_id, balance, total_earned, carry_seconds)
+            VALUES (?, ?, 0, 0)
+            ON CONFLICT(user_id) DO UPDATE SET balance = excluded.balance
+            """,
+            (user_id, current_balance - amount),
+        )
+        return True
 
 def get_top_voice_time(limit: int = 10) -> List[Tuple[str, int]]:
     """Retorna top usuários com mais tempo em call no dia"""

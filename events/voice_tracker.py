@@ -42,6 +42,8 @@ class VoiceTracker:
     
     async def initialize(self):
         print("🚀 Inicializando VoiceTracker...")
+        added = database.backfill_voice_currency_from_voice_totals()
+        print(f"🪙 Backfill de moedas concluído. Moedas adicionadas: {added}")
         await self.send_initial_ranking()
         print("✅ VoiceTracker inicializado!")
     
@@ -73,10 +75,9 @@ class VoiceTracker:
             for user_id, seconds in top10:
                 try:
                     member = await self._get_guild_member(int(user_id))
-                    
-                    if member:
-                        time_str = database.format_voice_time(seconds)
-                        ranking_data.append((member, time_str))
+                    mention_or_member = member if member else f"<@{user_id}>"
+                    time_str = database.format_voice_time(seconds)
+                    ranking_data.append((mention_or_member, time_str))
                 except Exception as e:
                     print(f"Erro ao processar usuário {user_id}: {e}")
 
@@ -131,10 +132,9 @@ class VoiceTracker:
             for user_id, seconds in top10:
                 try:
                     member = await self._get_guild_member(int(user_id))
-                    
-                    if member:
-                        time_str = database.format_voice_time(seconds)
-                        ranking_data.append((member, time_str))
+                    mention_or_member = member if member else f"<@{user_id}>"
+                    time_str = database.format_voice_time(seconds)
+                    ranking_data.append((mention_or_member, time_str))
                 except Exception as e:
                     print(f"Erro ao processar usuário {user_id}: {e}")
 
@@ -274,7 +274,10 @@ async def handle_voice_leave(member, channel):
 
         if session_duration is not None:
             time_formatted = database.format_voice_time(session_duration)
+            earned_coins = database.sync_user_voice_currency_with_voice_total(user_id_str)
             print(f"{member.display_name} saiu da call {channel.name} - Tempo: {time_formatted}")
+            if earned_coins > 0:
+                print(f"{member.display_name} ganhou {earned_coins} moeda(s) de call")
         else:
             print(f"{member.display_name} saiu da call mas não tinha sessão ativa")
 
