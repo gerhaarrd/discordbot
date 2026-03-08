@@ -13,7 +13,7 @@ class HelpView(discord.ui.LayoutView):
                     "e tenha a melhor experiência com o bot! 🍄✨"
             ),
             accessory=discord.ui.Thumbnail(
-                media="https://cdn.discordapp.com/attachments/1439299374302630011/1469429794818097172/Picsart_26-02-06_17-29-11-387.png?ex=6987a0a3&is=69864f23&hm=47346519a427180b092f40b6ce840429f0fd050d224c5e0d2cd3c8b2d696bd43&"
+                media="https://media.discordapp.net/attachments/1450869346304786594/1480025378880884827/help.png?ex=69ae2c8b&is=69acdb0b&hm=69ebbe6899c3dfa7c662ba52a58e2576bb819f50aa1798f881d209b4d0f0a180&=&format=webp&quality=lossless&width=700&height=1050"
             ),
         ),
 
@@ -49,6 +49,15 @@ class HelpView(discord.ui.LayoutView):
                     "**/mushremove <@user>** - Remove todos os stickers de um usuário.\n"
                     "🔒 Apenas Mush Crystals podem usar.\n\n"
                     "── .✦ Sistema exclusivo de personalização com stickers especiais! ˎˊ˗"
+        ),
+
+        discord.ui.Separator(visible=True, spacing=discord.SeparatorSpacing.large),
+
+        discord.ui.TextDisplay(
+            content="## 🎙️ **Comandos de Call e Moedas**\n\n"
+                    "**/voicestats** - Mostra suas estatísticas de tempo em call.\n\n"
+                    "**/moedas** - Mostra seu saldo de moedas de call.\n\n"
+                    "── .✦ Fique em call, ganhe moedas e personalize seu perfil! ˎˊ˗"
         ),
 
         accent_colour=discord.Colour(15742293),

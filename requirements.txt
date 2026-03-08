@@ -1,3 +1,4 @@
+aiofiles==25.1.0
 aiohappyeyeballs==2.6.1
 aiohttp==3.13.3
 aiosignal==1.4.0
@@ -5,8 +6,12 @@ attrs==25.4.0
 audioop-lts==0.2.2
 discord.py==2.6.4
 frozenlist==1.8.0
+greenlet==3.3.2
 idna==3.11
 multidict==6.7.1
 propcache==0.4.1
 python-dotenv==1.2.1
+Pillow==11.3.0
+SQLAlchemy==2.0.47
+typing_extensions==4.15.0
 yarl==1.22.0

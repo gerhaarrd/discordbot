@@ -7,15 +7,18 @@ import asyncio
 import events.ready as ready_event
 import events.member_join as join_event
 import events.message_handler as message_event
-import events.bump as bump_event
+import events.voice_tracker as voice_tracker_event
 import commands.misc as misc_commands
 import commands.mush as mush_commands
 import commands.reputation as reputation_commands
+import commands.voice_commands as voice_commands
 import events.esporos as esporos_event
+import events.rep_vote as rep_vote_event
 
 intents = discord.Intents.default()
 intents.members = True
 intents.message_content = True
+intents.presences = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
@@ -33,19 +36,23 @@ async def load_modules():
     print("mush_commands loaded")
     await reputation_commands.register(bot)
     print("reputation_commands loaded")
-    print("bump_event loaded")
-    #await esporos_event.register(bot)
+    await voice_commands.register(bot)
+    print("voice_commands loaded")
+    await voice_tracker_event.register(bot)
+    print("voice_tracker loaded")
+    await esporos_event.register(bot)
+    print("esporos_event loaded")
+    #await rep_vote_event.register(bot)
+    #print("rep_vote_event loaded")
     print("All modules loaded!")
     print([command.name for command in bot.commands])
-    
-    # Sincronizar comandos uma única vez durante o setup
+
     try:
         from config import GUILD_ID
         if GUILD_ID:
             import discord
             guild_obj = discord.Object(id=int(GUILD_ID))
-            
-            # Sincronizar comandos diretamente para a guild
+
             synced = await bot.tree.sync(guild=guild_obj)
             print(f"Sincronizados {len(synced)} comandos no servidor {GUILD_ID}")
         else:

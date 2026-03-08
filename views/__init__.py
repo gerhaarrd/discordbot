@@ -4,5 +4,6 @@ from .normal_colors import NormalColorsView
 from .rare_ping import Components as RarePingComponents, RarePingView
 from .bumpview import BumpComponents
 from .help import HelpView
+from .color_shop import ColorShopView
 
-__all__ = ["WelcomeComponents", "ColorsView", "NormalColorsView", "RarePingComponents", "RarePingView", "BumpComponents", "HelpView"]
+__all__ = ["WelcomeComponents", "ColorsView", "NormalColorsView", "RarePingComponents", "RarePingView", "BumpComponents", "HelpView", "ColorShopView"]
